@@ -2,27 +2,35 @@
 
 namespace HelloNico\ImageFactory;
 
-use HelloNico\ImageFactory\Scaler\WidthScaler;
+use HelloNico\ImageFactory\Scaler\RangeScaler;
+use HelloNico\ImageFactory\Scaler\SizesScaler;
+use HelloNico\ImageFactory\Scaler\Scaler;
 use Spatie\Image\Image;
 use Spatie\Image\Manipulations;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Mime\MimeTypes;
 use Spatie\Image\Exceptions\InvalidManipulation;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
+use Spatie\Image\GlideConversion;
 
 class ResponsiveImage extends Image
 {
-    private $srcset = [];
-    private $imagesSet = [];
-    private $scaler;
     private $sourcePath;
     private $cachePath;
     private $baseUrl;
     private $rebase;
+    private $maxMemoryLimit;
     private $optimize;
     private $optimizationOptions;
     private $hasSrcSet = false;
     private $dataUri = false;
     private $originalImagePath;
+
+    private $scaler;
+    private $minWidth;
+    private $maxWidth;
+    private $step;
+    private $sizes = [];
 
     public function __construct(string $pathToImage)
     {
@@ -42,8 +50,8 @@ class ResponsiveImage extends Image
     {
         if ($this->hasSrcSet) {
             $this->saveSrcSet();
-
             return $this->getSrcSet();
+            // return $this->srcset();
         }
 
         return $this->src();
@@ -56,7 +64,7 @@ class ResponsiveImage extends Image
      */
     public function src()
     {
-        $imagePath = $this->saveCache();
+        $imagePath = $this->generateImage();
         // Return data uri
         if ($this->dataUri) {
             return $this->getBase64($imagePath);
@@ -70,7 +78,7 @@ class ResponsiveImage extends Image
      *
      * @param array|callable|Manipulations $manipulations
      */
-    public function manipulate($manipulations)
+    public function manipulate($manipulations): ResponsiveImage
     {
         if (isset($manipulations['srcset'])) {
             \call_user_func_array([$this, 'srcset'], $manipulations['srcset']);
@@ -94,28 +102,12 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Undocumented function.
+     * Undocumented function
      *
-     * @param [type] $mime
-     * @param mixed  $bool
+     * @return string
      */
-    public function setDataUri($bool)
+    private function resolveImagePath() :string
     {
-        $this->dataUri = $bool;
-
-        return $this;
-    }
-
-    public function datauri()
-    {
-        $this->setDataUri(true);
-
-        return $this;
-    }
-
-    private function resolveImagePath()
-    {
-
         // Store original provided path and don't modify it
         if (!$this->originalImagePath) {
             $this->originalImagePath = $this->pathToImage;
@@ -131,7 +123,13 @@ class ResponsiveImage extends Image
         return $imagePath;
     }
 
-    private function getCacheFilename($imagePath)
+    /**
+     * Get cache filename
+     *
+     * @param string $imagePath Relative path to image
+     * @return string
+     */
+    private function getCacheFilename($imagePath) :string
     {
         $parts = [
             \pathinfo($imagePath, PATHINFO_FILENAME),
@@ -158,7 +156,8 @@ class ResponsiveImage extends Image
         }, $this->manipulations->toArray());
 
         // Create a unique hash based on file path and manipulations
-        $parts[] = \substr(\md5(\json_encode($manipulations).$this->pathToImage), 0, 8);
+        // @todo if file is an absolute path, rebased -> conflict
+        $parts[] = \substr(\md5(\json_encode($manipulations).$imagePath), 0, 8);
 
         $extension = \pathinfo($imagePath, PATHINFO_EXTENSION);
 
@@ -171,12 +170,12 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Undocumented function
+     * Get cache file path
      *
      * @param string $imageRelativePath
      * @return string
      */
-    private function getCacheFilePath($imagePath)
+    private function getCacheFilePath($imagePath) :string
     {
         $dirname = \pathinfo($imagePath, PATHINFO_DIRNAME);
         $dirname = '.' === $dirname ? null : $dirname;
@@ -194,22 +193,29 @@ class ResponsiveImage extends Image
      * @param string $imageCachePath
      * @return string
      */
-    private function resolveUrl($imageCachePath)
+    private function resolveUrl($imageCachePath) :string
     {
         $imageRelativeUrl = str_replace($this->getPublicPath(), '', $imageCachePath);
         return $this->getBaseUrl() ? $this->getBaseUrl() . $imageRelativeUrl : $imageRelativeUrl;
     }
 
+    private function validateManipulations()
+    {
+        if ($this->manipulations->hasManipulation('datauri') && $this->manipulations->hasManipulation('srcset')) {
+            throw new \Exception('srcset and datauri can’t be ');
+        }
+    }
+
     /**
-     * Undocumented function.
+     * Generate image
      *
      * @param string $return
      */
-    private function saveCache($return = 'url')
+    public function generateImage()
     {
-
         // @todo sanitize manipulations
         // Prevent datauri / srcset both
+        $this->validateManipulations();
 
         // Per image optimize parameter
         if ($this->manipulations->hasManipulation('optimize')) {
@@ -240,7 +246,10 @@ class ResponsiveImage extends Image
 
         // Raise memory limit
         // @todo make setting configurable
+        // increase if larger than current setting
+        // if( \ini_get('memory_limit') < $this->getMaxMemoryLimit() ) {
         \ini_set('memory_limit', '512M');
+        // }
 
         // Create directory if missing
         $cacheDir = \pathinfo($imageCachePath, PATHINFO_DIRNAME);
@@ -268,17 +277,17 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get source path.
+     * Get source path
      *
      * @return string $sourcePath
      */
-    public function getSourcePath()
+    public function getSourcePath() :string
     {
         return $this->sourcePath;
     }
 
     /**
-     * Set cache path.
+     * Set cache path
      *
      * @param string $cachePath
      */
@@ -288,17 +297,17 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get cache path.
+     * Get cache path
      *
      * @return string $cachePath
      */
-    public function getCachePath()
+    public function getCachePath() :string
     {
         return $this->cachePath;
     }
 
     /**
-     * Set public path.
+     * Set public path
      *
      * @param string $publicPath
      */
@@ -308,17 +317,17 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get public path.
+     * Get public path
      *
      * @return string $publicPath
      */
-    public function getPublicPath()
+    public function getPublicPath() :string
     {
         return $this->publicPath;
     }
 
     /**
-     * Set rebase.
+     * Set rebase
      *
      * @param bool $rebase
      */
@@ -328,17 +337,17 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get rebase.
+     * Get rebase
      *
      * @return bool
      */
-    public function getRebase()
+    public function getRebase() :bool
     {
         return $this->rebase;
     }
 
     /**
-     * Set optimize.
+     * Set optimize
      *
      * @param string $cachePath
      * @param mixed  $optimize
@@ -349,17 +358,17 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get optimize.
+     * Get optimize
      *
      * @return bool
      */
-    public function getOptimize()
+    public function getOptimize() :bool
     {
         return $this->optimize;
     }
 
     /**
-     * Set optimization options.
+     * Set optimization options
      *
      * @see https://docs.spatie.be/image/v1/image-manipulations/optimizing-images/
      */
@@ -369,23 +378,170 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get optimization options.
+     * Get optimization options
      *
      * @return array
      */
-    public function getOptimizationOptions()
+    public function getOptimizationOptions() :array
     {
         return $this->optimizationOptions;
     }
 
     /**
-     * Set base URL.
+     * Set base URL
      *
      * @param string $baseUrl
      */
-    public function setbaseUrl($baseUrl)
+    public function setBaseUrl($baseUrl)
     {
         $this->baseUrl = \rtrim($baseUrl, '/');
+    }
+
+    /**
+     * Get base URL
+     *
+     * @return string $baseUrl
+     */
+    public function getBaseUrl() :string
+    {
+        return $this->baseUrl;
+    }
+
+    /**
+     * Get scaler
+     *
+     * @return Scaler
+     */
+    public function getScaler() :Scaler
+    {
+        return $this->scaler;
+    }
+
+    /**
+     * Set scaler
+     *
+     * @param string $scaler
+     *
+     * @return Scaler
+     */
+    public function setScaler($scaler)
+    {
+        switch ($scaler) {
+            case 'range':
+                $scaler = new RangeScaler($this);
+                $scaler->setMinWidth($this->getMinWidth());
+                $scaler->setMaxWidth($this->getMaxWidth());
+                $scaler->setStepModifier($this->getStep());
+                break;
+            case 'sizes':
+                $scaler = new SizesScaler($this);
+                $scaler->setSizes($this->getSizes());
+                break;
+        }
+
+        $this->scaler = $scaler;
+
+        return $this;
+    }
+
+    /**
+     * Set min width
+     *
+     * @param int $minWidth
+     */
+    public function setMinWidth(int $minWidth)
+    {
+        $this->minWidth = $minWidth;
+
+        return $this;
+    }
+
+    /**
+     * Get min width
+     *
+     * @return string $minWidth
+     */
+    public function getMinWidth() :int
+    {
+        return $this->minWidth;
+    }
+
+    /**
+     * Set max width
+     *
+     * @param int $maxWidth
+     */
+    public function setMaxWidth(int $maxWidth)
+    {
+        $this->maxWidth = $maxWidth;
+
+        return $this;
+    }
+
+    /**
+     * Get max width
+     *
+     * @return string $maxWidth
+     */
+    public function getMaxWidth() :int
+    {
+        return $this->maxWidth;
+    }
+
+    /**
+     * Set step
+     *
+     * @param int $step
+     */
+    public function setStep(int $step)
+    {
+        $this->step = $step;
+
+        return $this;
+    }
+
+    /**
+     * Get step
+     *
+     * @return int $step
+     */
+    public function getStep() :int
+    {
+        return $this->step;
+    }
+
+    /**
+     * Set sizes
+     *
+     * @param array $sizes
+     */
+    public function setSizes(array $sizes)
+    {
+        $this->sizes = $sizes;
+
+        return $this;
+    }
+
+    /**
+     * Get sizes
+     *
+     * @return array $sizes
+     */
+    public function getSizes() :array
+    {
+        return $this->sizes;
+    }
+
+    /**
+     * Set max memory limit
+     *
+     * @param string $limit
+     */
+    public function setMaxMemoryLimit($limit)
+    {
+        $this->maxMemoryLimit = $limit;
+
+        return $this;
     }
 
     /**
@@ -393,37 +549,33 @@ class ResponsiveImage extends Image
      *
      * @return string $baseUrl
      */
-    public function getbaseUrl()
+    public function getMaxMemoryLimit() :string
     {
-        return $this->baseUrl;
+        return $this->maxMemoryLimit;
     }
 
     /**
-     * Get scaler.
+     * Set datauri
      *
-     * @return AbstractScaler
+     * @param bool $bool
      */
-    public function getScaler()
+    public function setDataUri(bool $bool)
     {
-        return $this->scaler;
+        $this->dataUri = $bool;
+
+        return $this;
     }
 
     /**
-     * Set scaler.
+     * Enable datauri
      *
-     * @param string $scaler
-     *
-     * @return AbstractScaler
+     * @return
      */
-    public function setScaler($scaler)
+    public function datauri()
     {
-        switch ($scaler) {
-            case 'width':
-                $scaler = new WidthScaler($this);
+        $this->setDataUri(true);
 
-                break;
-        }
-        $this->scaler = $scaler;
+        return $this;
     }
 
     /**
@@ -470,6 +622,75 @@ class ResponsiveImage extends Image
     }
 
     /**
+     * @param int $width
+     * @param int $height
+     * @param string $cropMethod
+     *
+     * @return $this
+     *
+     * @throws InvalidManipulation
+     */
+    public function crop(int $width, int $height, string $cropMethod = Manipulations::CROP_CENTER) :ResponsiveImage
+    {
+        return parent::crop($cropMethod, $width, $height);
+    }
+
+    /**
+     * @param int $width
+     * @param int $height
+     * @param string $fitMethod
+     *
+     * @return $this
+     *
+     * @throws InvalidManipulation
+     */
+    public function fit(int $width, int $height, string $fitMethod = Manipulations::FIT_FILL) :ResponsiveImage
+    {
+        return parent::fit($fitMethod, $width, $height);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function performOptimization($path, array $optimizerChainConfiguration)
+    {
+        $optimizerChain = OptimizerChainFactory::create();
+
+        $optimizers = $this->getOptimizationOptions();
+        if (!empty($optimizers)) {
+            $optimizerChain->setOptimizers($optimizers);
+        }
+
+        $optimizerChain->optimize($path);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function save($outputPath = '')
+    {
+        if ($outputPath == '') {
+            $outputPath = $this->pathToImage;
+        }
+
+        $this->addFormatManipulation($outputPath);
+
+        $glideConversion = GlideConversion::create($this->pathToImage)->useImageDriver($this->imageDriver);
+
+        if (! is_null($this->temporaryDirectory)) {
+            $glideConversion->setTemporaryDirectory($this->temporaryDirectory);
+        }
+
+        $glideConversion->performManipulations($this->manipulations);
+
+        $glideConversion->save($outputPath);
+
+        if ($this->shouldOptimize()) {
+            $this->performOptimization($outputPath, []);
+        }
+    }
+
+    /**
      * Undocumented function.
      *
      * @param int $minWidth
@@ -477,16 +698,27 @@ class ResponsiveImage extends Image
      * @param int    $step
      * @param string $scaler
      */
-    public function srcset(
-        int $minWidth,
-        int $maxWidth,
-        int $step = 100,
-        $scaler = ''
-    ) {
-        $this->hasSrcSet = true;
-        $this->scaler->setMinWidth($minWidth);
-        $this->scaler->setMaxWidth($maxWidth);
-        $this->scaler->setStepModifier($step);
+    public function srcset()
+    {
+        $args = func_get_args();
+
+        // sizes scaler
+        if (count($args) === 1) {
+            $this->setSizes($args[0]);
+            $this->setScaler('sizes');
+        }
+
+        // range scaler
+        if (in_array(count($args), [2, 3], true)) {
+            $this->setMinWidth($args[0]);
+            $this->setMaxWidth($args[1]);
+            if (!empty($args[2])) {
+                $this->setStep($args[2]);
+            }
+            $this->setScaler('range');
+        }
+
+        dd($this->scaler->scale($this));
 
         return $this;
     }
@@ -519,6 +751,8 @@ class ResponsiveImage extends Image
      */
     public function saveSrcSet()
     {
+        $this->validateManipulations();
+
         $sizes = $this->scaler->scale($this);
 
         $original_width = $this->manipulations->getManipulationArgument('width');
@@ -541,7 +775,7 @@ class ResponsiveImage extends Image
                 $this->height($height);
             }
 
-            $url = $this->saveCache();
+            $url = $this->src();
             if ($url) {
                 $this->addSource($url, $width);
             }
@@ -569,33 +803,5 @@ class ResponsiveImage extends Image
         }
 
         return \implode(',', $srcset);
-    }
-
-    /**
-     * @param int $width
-     * @param int $height
-     * @param string $cropMethod
-     *
-     * @return $this
-     *
-     * @throws InvalidManipulation
-     */
-    public function crop(int $width, int $height, string $cropMethod = Manipulations::CROP_CENTER)
-    {
-        return parent::crop($cropMethod, $width, $height);
-    }
-
-    /**
-     * @param int $width
-     * @param int $height
-     * @param string $fitMethod
-     *
-     * @return $this
-     *
-     * @throws InvalidManipulation
-     */
-    public function fit(int $width, int $height, string $fitMethod = Manipulations::FIT_CONTAIN)
-    {
-        return parent::fit($fitMethod, $width, $height);
     }
 }

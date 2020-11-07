@@ -2,10 +2,9 @@
 
 namespace HelloNico\ImageFactory\Scaler;
 
-class WidthScaler extends AbstractScaler
+class RangeScaler extends AbstractScaler
 {
     /**
-     * @param SplFileInfo $sourceFile
      * @param Image       $imageObject
      * @param mixed       $image
      *

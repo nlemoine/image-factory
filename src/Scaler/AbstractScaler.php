@@ -7,17 +7,7 @@ abstract class AbstractScaler implements Scaler
     /**
      * @var int
      */
-    protected $minFileSize;
-
-    /**
-     * @var int
-     */
     protected $minWidth;
-
-    /**
-     * @var int
-     */
-    protected $maxFileSize;
 
     /**
      * @var int
@@ -39,37 +29,13 @@ abstract class AbstractScaler implements Scaler
     }
 
     /**
-     * @param mixed $minFileSize
-     *
-     * @return AbstractScaler
-     */
-    public function setMinFileSize($minFileSize)
-    {
-        $this->minFileSize = $minFileSize;
-
-        return $this;
-    }
-
-    /**
      * @param mixed $minWidth
      *
      * @return AbstractScaler
      */
-    public function setMinWidth($minWidth)
+    public function setMinWidth(int $minWidth)
     {
         $this->minWidth = $minWidth;
-
-        return $this;
-    }
-
-    /**
-     * @param mixed $maxFileSize
-     *
-     * @return AbstractScaler
-     */
-    public function setMaxFileSize($maxFileSize)
-    {
-        $this->maxFileSize = $maxFileSize;
 
         return $this;
     }
@@ -79,7 +45,7 @@ abstract class AbstractScaler implements Scaler
      *
      * @return AbstractScaler
      */
-    public function setMaxWidth($maxWidth)
+    public function setMaxWidth(int $maxWidth)
     {
         $this->maxWidth = $maxWidth;
 
@@ -91,7 +57,7 @@ abstract class AbstractScaler implements Scaler
      *
      * @return AbstractScaler
      */
-    public function setStepModifier($stepModifier)
+    public function setStepModifier(int $stepModifier)
     {
         $this->stepModifier = $stepModifier;
 

@@ -19,39 +19,25 @@ interface Scaler
     public function scale($image);
 
     /**
-     * @param $minFileSize
-     *
-     * @return mixed
-     */
-    public function setMinFileSize($minFileSize);
-
-    /**
      * @param $minWidth
      *
      * @return mixed
      */
-    public function setMinWidth($minWidth);
-
-    /**
-     * @param $maxFileSize
-     *
-     * @return mixed
-     */
-    public function setMaxFileSize($maxFileSize);
+    public function setMinWidth(int $minWidth);
 
     /**
      * @param $maxWidth
      *
      * @return mixed
      */
-    public function setMaxWidth($maxWidth);
+    public function setMaxWidth(int $maxWidth);
 
     /**
      * @param $stepModifier
      *
      * @return mixed
      */
-    public function setStepModifier($stepModifier);
+    public function setStepModifier(int $step);
 
     /**
      * @param $includeSource
