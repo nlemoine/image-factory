@@ -28,6 +28,7 @@ class ImageFactoryExtension extends AbstractExtension
     public function __call($name, array $arguments = [])
     {
         $image = $arguments[0];
+
         if (is_string($image)) {
             $image = $this->factory->create($arguments[0]);
         }
