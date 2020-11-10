@@ -29,10 +29,6 @@ class Factory
      */
     public function create($imagePath)
     {
-        if ($imagePath instanceof ResponsiveImage) {
-            return $imagePath;
-        }
-
         if (!\is_string($imagePath)) {
             return false;
         }
@@ -51,6 +47,7 @@ class Factory
         $image->setOptimize($this->getOptimize());
         $image->setOptimizationOptions($this->getOptimizationOptions());
         $image->setMaxMemoryLimit($this->getMaxMemoryLimit());
+        $image->setBatch($this->getBatch());
         $image->useImageDriver($this->getDriver());
 
         return $image;
@@ -99,7 +96,7 @@ class Factory
      *
      * @return null|string
      */
-    public function getPublicPath() :bool
+    public function getPublicPath() :string
     {
         if (!isset($this->config['publicPath'])) {
             throw new InvalidArgumentException('A "publicPath" must be set.');
@@ -218,5 +215,15 @@ class Factory
     public function getSizes() :array
     {
         return $this->config['sizes'] ?? [];
+    }
+
+    /**
+     * Get batch
+     *
+     * @return int
+     */
+    public function getBatch() :int
+    {
+        return $this->config['batch'] ?? 3;
     }
 }

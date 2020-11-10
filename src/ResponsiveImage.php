@@ -48,25 +48,23 @@ class ResponsiveImage extends Image
      */
     public function __toString()
     {
-        if ($this->hasSrcSet) {
-            $this->saveSrcSet();
+        if ($this->getHasSrcset()) {
             return $this->getSrcSet();
-            // return $this->srcset();
         }
-
-        return $this->src();
+        return $this->getSrc();
     }
 
     /**
-     * Return image src
+     * Get src
      *
      * @return string
      */
-    public function src()
+    public function getSrc()
     {
         $imagePath = $this->generateImage();
+
         // Return data uri
-        if ($this->dataUri) {
+        if ($this->getDataUri()) {
             return $this->getBase64($imagePath);
         }
         // Return URL
@@ -74,24 +72,141 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Manipulate image with an array.
+     * Get srcset
+     *
+     * @return string
+     */
+    public function getSrcSet()
+    {
+        $srcset = $this->getSrcSetSources();
+
+        if (empty($srcset)) {
+            return;
+        }
+
+        \ksort($srcset);
+
+        return implode(',', array_map(function ($width, $path) {
+            return sprintf('%s %dw', $this->resolveUrl($path), $width);
+        }, array_keys($srcset), $srcset));
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @return array
+     */
+    public function getSrcSetSources(): array
+    {
+        $sizes = $this->scaler->scale($this);
+
+        // start by wider images
+        rsort($sizes);
+
+        $originalWidth = $this->manipulations->getManipulationArgument('width');
+        $originalHeight = $this->manipulations->getManipulationArgument('height');
+
+        $srcset = [];
+        $batch = !empty($this->getBatch()) ? $this->getBatch() : 0;
+        foreach ($sizes as $i => $width) {
+            if ($this->hasManipulation('width')) {
+                $this->manipulations->removeManipulation('width');
+            }
+            if ($this->hasManipulation('height')) {
+                $this->manipulations->removeManipulation('height');
+            }
+
+            // Set width
+            $this->width($width);
+
+            // Set height while keeping aspect ratio
+            // @todo List manipulations that needs recalculating height
+            if ($this->hasManipulation('crop') && $originalWidth && $originalHeight) {
+                $height = floor(($originalHeight / $originalWidth) * $width);
+                $this->height($height);
+            }
+
+            $imageCachePath = $this->getCacheFilePath();
+
+            if ($batch) {
+                $exists = $this->filesystem->exists($imageCachePath);
+                if ($exists) {
+                    $batch += 1;
+                }
+                if (!$exists && ($i + 1) > $batch) {
+                    continue;
+                }
+            }
+
+            $path = $this->generateImage($imageCachePath);
+            if ($path) {
+                $srcset[(int) $width] = $path;
+            }
+        }
+
+        return $srcset;
+    }
+
+    /**
+     * Set srcset scaler
+     */
+    public function srcset() :ResponsiveImage
+    {
+        $args = func_get_args();
+
+        $this->setHasSrcset(true);
+
+        // sizes scaler
+        if (count($args) === 1 && is_array($args[0])) {
+            $this->setSizes($args[0]);
+            $this->setScaler('sizes');
+        }
+
+        // range scaler
+        if (in_array(count($args), [2, 3], true)) {
+            $minWidth = $args[0];
+            $maxWidth = $args[1];
+            $step = $args[2] ?? null;
+
+            if ($minWidth >= $maxWidth) {
+                throw new \InvalidArgumentException(sprintf('min width (%d) must be greater than maw width (%d)', $minWidth, $maxWidth));
+            }
+
+            $this->setMinWidth($minWidth);
+            $this->setMaxWidth($maxWidth);
+            if (!empty($step)) {
+                $this->setStep($step);
+            }
+            $this->setScaler('range');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Manipulate image
      *
      * @param array|callable|Manipulations $manipulations
      */
     public function manipulate($manipulations): ResponsiveImage
     {
         if (isset($manipulations['srcset'])) {
-            \call_user_func_array([$this, 'srcset'], $manipulations['srcset']);
-            unset($manipulations['srcset']);
-        }
-        if (isset($manipulations['datauri'])) {
-            $this->datauri();
-            unset($manipulations['datauri']);
-            // Remove srcset
-            if (isset($manipulations['srcset'])) {
-                unset($manipulations['srcset']);
+            $args = [];
+            // range scaler
+            if (!empty($manipulations['srcset']['min']) && !empty($manipulations['srcset']['max'])) {
+                $args = array_values($manipulations['srcset']);
+            // sizes scaler
+            } elseif (is_array($manipulations['srcset'])) {
+                $args = [$manipulations['srcset']];
             }
+            \call_user_func_array([$this, 'srcset'], $args);
         }
+
+        if (!empty($manipulations['datauri'])) {
+            $this->setDataUri(true);
+        }
+
+        unset($manipulations['srcset'], $manipulations['datauri']);
 
         if (\is_array($manipulations)) {
             $manipulations = new Manipulations([$manipulations]);
@@ -115,7 +230,11 @@ class ResponsiveImage extends Image
 
         $imagePath = $this->originalImagePath;
         if ($this->filesystem->isAbsolutePath($imagePath)) {
-            return pathinfo($imagePath, PATHINFO_BASENAME);
+            if (false === strpos($imagePath, $this->getSourcePath())) {
+                return pathinfo($imagePath, PATHINFO_BASENAME);
+            }
+            // Image is in source path, make it relative
+            $imagePath = ltrim(str_replace($this->getSourcePath(), '', $imagePath), '/');
         }
 
         $this->pathToImage = $this->getSourcePath().'/'.$imagePath;
@@ -175,10 +294,27 @@ class ResponsiveImage extends Image
      * @param string $imageRelativePath
      * @return string
      */
-    private function getCacheFilePath($imagePath) :string
+    private function getCacheFilePath() :string
     {
+        // Per image optimize parameter
+        if ($this->manipulations->hasManipulation('optimize')) {
+            $optimize = (bool) $this->manipulations->getFirstManipulationArgument('optimize');
+            $this->setOptimize($optimize);
+            if (!$optimize) {
+                $this->manipulations->removeManipulation('optimize');
+            }
+        }
+
+        // Optimize
+        if ($this->getOptimize()) {
+            $this->optimize($this->getOptimizationOptions());
+        }
+
+        // Resolve image path
+        $imagePath = $this->resolveImagePath();
+
         $dirname = \pathinfo($imagePath, PATHINFO_DIRNAME);
-        $dirname = '.' === $dirname ? null : $dirname;
+        $dirname = '.' === $dirname ? '' : $dirname;
 
         if (!empty($dirname)) {
             $dirname = $this->getRebase() ? '' : $dirname . '/';
@@ -199,10 +335,18 @@ class ResponsiveImage extends Image
         return $this->getBaseUrl() ? $this->getBaseUrl() . $imageRelativeUrl : $imageRelativeUrl;
     }
 
+    /**
+     * Validate manipulations
+     *
+     * @return void
+     */
     private function validateManipulations()
     {
-        if ($this->manipulations->hasManipulation('datauri') && $this->manipulations->hasManipulation('srcset')) {
-            throw new \Exception('srcset and datauri can’t be ');
+        if (
+            $this->manipulations->hasManipulation('datauri')
+            && $this->manipulations->hasManipulation('srcset')
+        ) {
+            throw new \Exception('srcset and datauri can’t be used together');
         }
     }
 
@@ -211,44 +355,24 @@ class ResponsiveImage extends Image
      *
      * @param string $return
      */
-    public function generateImage()
+    public function generateImage(string $imageCachePath = '')
     {
-        // @todo sanitize manipulations
-        // Prevent datauri / srcset both
+        // Prevent datauri / srcset together
         $this->validateManipulations();
 
-        // Per image optimize parameter
-        if ($this->manipulations->hasManipulation('optimize')) {
-            $optimize = (bool) $this->manipulations->getFirstManipulationArgument('optimize');
-            $this->setOptimize($optimize);
-            if (!$optimize) {
-                $this->manipulations->removeManipulation('optimize');
-            }
-        }
-
-        // Optimize
-        if ($this->getOptimize()) {
-            $this->optimize($this->getOptimizationOptions());
-        }
-
-        // Resolve image path
-        $imagePath = $this->resolveImagePath();
-
         // Get cached file path
-        $imageCachePath = $this->getCacheFilePath($imagePath);
+        $imageCachePath = $imageCachePath ?: $this->getCacheFilePath();
 
         // Cache image exists
         if ($this->filesystem->exists($imageCachePath)) {
             return $imageCachePath;
         }
 
-        // Create manipulated image
-
         // Raise memory limit
         // @todo make setting configurable
         // increase if larger than current setting
         // if( \ini_get('memory_limit') < $this->getMaxMemoryLimit() ) {
-        \ini_set('memory_limit', '512M');
+        // \ini_set('memory_limit', '512M');
         // }
 
         // Create directory if missing
@@ -257,6 +381,7 @@ class ResponsiveImage extends Image
             $this->filesystem->mkdir($cacheDir);
         }
 
+        // Create manipulated image
         try {
             parent::save($imageCachePath);
         } catch (\Exception $e) {
@@ -267,13 +392,15 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Set source path.
+     * Set source path
      *
      * @param string $sourcePath
      */
-    public function setSourcePath($sourcePath)
+    public function setSourcePath($sourcePath) :ResponsiveImage
     {
         $this->sourcePath = \rtrim($sourcePath, '/');
+
+        return $this;
     }
 
     /**
@@ -291,9 +418,11 @@ class ResponsiveImage extends Image
      *
      * @param string $cachePath
      */
-    public function setCachePath($cachePath)
+    public function setCachePath($cachePath) :ResponsiveImage
     {
         $this->cachePath = \rtrim($cachePath, '/');
+
+        return $this;
     }
 
     /**
@@ -311,9 +440,11 @@ class ResponsiveImage extends Image
      *
      * @param string $publicPath
      */
-    public function setPublicPath($publicPath)
+    public function setPublicPath($publicPath) :ResponsiveImage
     {
         $this->publicPath = \rtrim($publicPath, '/');
+
+        return $this;
     }
 
     /**
@@ -331,9 +462,11 @@ class ResponsiveImage extends Image
      *
      * @param bool $rebase
      */
-    public function setRebase($rebase)
+    public function setRebase($rebase) :ResponsiveImage
     {
         $this->rebase = $rebase;
+
+        return $this;
     }
 
     /**
@@ -355,6 +488,8 @@ class ResponsiveImage extends Image
     public function setOptimize($optimize)
     {
         $this->optimize = $optimize;
+
+        return $this;
     }
 
     /**
@@ -375,6 +510,8 @@ class ResponsiveImage extends Image
     public function setOptimizationOptions(array $options)
     {
         $this->optimizationOptions = $options;
+
+        return $this;
     }
 
     /**
@@ -392,9 +529,11 @@ class ResponsiveImage extends Image
      *
      * @param string $baseUrl
      */
-    public function setBaseUrl($baseUrl)
+    public function setBaseUrl($baseUrl) :ResponsiveImage
     {
         $this->baseUrl = \rtrim($baseUrl, '/');
+
+        return $this;
     }
 
     /**
@@ -408,23 +547,13 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get scaler
-     *
-     * @return Scaler
-     */
-    public function getScaler() :Scaler
-    {
-        return $this->scaler;
-    }
-
-    /**
      * Set scaler
      *
      * @param string $scaler
      *
      * @return Scaler
      */
-    public function setScaler($scaler)
+    public function setScaler($scaler) :ResponsiveImage
     {
         switch ($scaler) {
             case 'range':
@@ -445,11 +574,21 @@ class ResponsiveImage extends Image
     }
 
     /**
+     * Get scaler
+     *
+     * @return Scaler
+     */
+    public function getScaler() :Scaler
+    {
+        return $this->scaler;
+    }
+
+    /**
      * Set min width
      *
      * @param int $minWidth
      */
-    public function setMinWidth(int $minWidth)
+    public function setMinWidth(int $minWidth) :ResponsiveImage
     {
         $this->minWidth = $minWidth;
 
@@ -471,7 +610,7 @@ class ResponsiveImage extends Image
      *
      * @param int $maxWidth
      */
-    public function setMaxWidth(int $maxWidth)
+    public function setMaxWidth(int $maxWidth) :ResponsiveImage
     {
         $this->maxWidth = $maxWidth;
 
@@ -493,7 +632,7 @@ class ResponsiveImage extends Image
      *
      * @param int $step
      */
-    public function setStep(int $step)
+    public function setStep(int $step) :ResponsiveImage
     {
         $this->step = $step;
 
@@ -515,7 +654,7 @@ class ResponsiveImage extends Image
      *
      * @param array $sizes
      */
-    public function setSizes(array $sizes)
+    public function setSizes(array $sizes) :ResponsiveImage
     {
         $this->sizes = $sizes;
 
@@ -537,7 +676,7 @@ class ResponsiveImage extends Image
      *
      * @param string $limit
      */
-    public function setMaxMemoryLimit($limit)
+    public function setMaxMemoryLimit($limit) :ResponsiveImage
     {
         $this->maxMemoryLimit = $limit;
 
@@ -559,7 +698,7 @@ class ResponsiveImage extends Image
      *
      * @param bool $bool
      */
-    public function setDataUri(bool $bool)
+    public function setDataUri(bool $bool) :ResponsiveImage
     {
         $this->dataUri = $bool;
 
@@ -567,15 +706,69 @@ class ResponsiveImage extends Image
     }
 
     /**
+     * Get datauri
+     *
+     * @param bool $bool
+     */
+    public function getDataUri()
+    {
+        return $this->dataUri;
+    }
+
+    /**
      * Enable datauri
      *
      * @return
      */
-    public function datauri()
+    public function datauri() :ResponsiveImage
     {
         $this->setDataUri(true);
 
         return $this;
+    }
+
+    /**
+     * Set has srcset
+     *
+     * @param bool $bool
+     */
+    public function setHasSrcset(bool $bool) :ResponsiveImage
+    {
+        $this->hasSrcSet = $bool;
+
+        return $this;
+    }
+
+    /**
+     * Get has srcset
+     *
+     * @return bool
+     */
+    public function getHasSrcset()
+    {
+        return $this->hasSrcSet;
+    }
+
+    /**
+     * Set batch
+     *
+     * @param int $batch
+     */
+    public function setBatch(int $batch) :ResponsiveImage
+    {
+        $this->batch = $batch;
+
+        return $this;
+    }
+
+    /**
+     * Get batch
+     *
+     * @return int
+     */
+    public function getBatch()
+    {
+        return $this->batch;
     }
 
     /**
@@ -597,9 +790,6 @@ class ResponsiveImage extends Image
 
     /**
      * Creates a data URI (RFC 2397).
-     *
-     * Length validation is not perfomed on purpose, validation should
-     * be done before calling this filter.
      *
      * @return string The generated data URI
      */
@@ -688,120 +878,5 @@ class ResponsiveImage extends Image
         if ($this->shouldOptimize()) {
             $this->performOptimization($outputPath, []);
         }
-    }
-
-    /**
-     * Undocumented function.
-     *
-     * @param int $minWidth
-     * @param int $maxWidth
-     * @param int    $step
-     * @param string $scaler
-     */
-    public function srcset()
-    {
-        $args = func_get_args();
-
-        // sizes scaler
-        if (count($args) === 1) {
-            $this->setSizes($args[0]);
-            $this->setScaler('sizes');
-        }
-
-        // range scaler
-        if (in_array(count($args), [2, 3], true)) {
-            $this->setMinWidth($args[0]);
-            $this->setMaxWidth($args[1]);
-            if (!empty($args[2])) {
-                $this->setStep($args[2]);
-            }
-            $this->setScaler('range');
-        }
-
-        dd($this->scaler->scale($this));
-
-        return $this;
-    }
-
-    /**
-     * @param      $sources
-     * @param null $value
-     *
-     * @return Image
-     */
-    public function addSource($sources, $value = null)
-    {
-        if (!\is_array($sources) && $value) {
-            $sources = [$sources => $value];
-        } elseif (!\is_array($sources)) {
-            return $this;
-        }
-
-        foreach ($sources as $url => $width) {
-            $width = \str_replace('px', '', $width);
-
-            $this->srcset[(int) $width] = $url;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Undocumented function.
-     */
-    public function saveSrcSet()
-    {
-        $this->validateManipulations();
-
-        $sizes = $this->scaler->scale($this);
-
-        $original_width = $this->manipulations->getManipulationArgument('width');
-        $original_height = $this->manipulations->getManipulationArgument('height');
-
-        foreach ($sizes as $width) {
-            if ($this->hasManipulation('width')) {
-                $this->manipulations->removeManipulation('width');
-            }
-            if ($this->hasManipulation('height')) {
-                $this->manipulations->removeManipulation('height');
-            }
-
-            // Set width
-            $this->width($width);
-
-            // Set height while keeping aspect ratio
-            if ($this->hasManipulation('crop') && $original_width && $original_height) {
-                $height = ($original_height / $original_width) * $width;
-                $this->height($height);
-            }
-
-            $url = $this->src();
-            if ($url) {
-                $this->addSource($url, $width);
-            }
-        }
-
-        return $this;
-    }
-
-    public function getSrcSetUrls()
-    {
-        return array_values($this->srcset);
-    }
-
-    /**
-     * Undocumented function.
-     */
-    public function getSrcSet()
-    {
-        $srcset = [];
-
-        \ksort($this->srcset);
-
-        foreach ($this->srcset as $w => $url) {
-            $srcset[] = "{$url} {$w}w";
-        }
-
-        return \implode(',', $srcset);
     }
 }

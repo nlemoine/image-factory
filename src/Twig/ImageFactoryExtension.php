@@ -3,6 +3,7 @@
 namespace HelloNico\ImageFactory\Twig;
 
 use HelloNico\ImageFactory\Factory;
+use HelloNico\ImageFactory\ResponsiveImage;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
@@ -26,7 +27,14 @@ class ImageFactoryExtension extends AbstractExtension
      */
     public function __call($name, array $arguments = [])
     {
-        $image = $this->factory->create($arguments[0]);
+        $image = $arguments[0];
+        if (is_string($image)) {
+            $image = $this->factory->create($arguments[0]);
+        }
+        if (!$image instanceof ResponsiveImage) {
+            throw new \Exception('You must pass a string or a ResponsiveImage object');
+        }
+
         $args = isset($arguments[1]) ? $arguments[1] : [];
 
         if ('manipulate' === $name) {
