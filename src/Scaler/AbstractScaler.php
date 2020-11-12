@@ -2,7 +2,7 @@
 
 namespace HelloNico\ImageFactory\Scaler;
 
-abstract class AbstractScaler implements Scaler
+abstract class AbstractScaler implements ScalerInterface
 {
     /**
      * @var int
@@ -15,25 +15,21 @@ abstract class AbstractScaler implements Scaler
     protected $maxWidth;
 
     /**
-     * @var float
+     * @var int
      */
-    protected $stepModifier;
+    protected $step;
 
     /**
      * @var bool
      */
     protected $includeSource;
 
-    public function __construct()
-    {
-    }
-
     /**
-     * @param mixed $minWidth
+     * @param int $minWidth
      *
-     * @return AbstractScaler
+     * @return ScalerInterface
      */
-    public function setMinWidth(int $minWidth)
+    public function setMinWidth(int $minWidth) :ScalerInterface
     {
         $this->minWidth = $minWidth;
 
@@ -41,11 +37,11 @@ abstract class AbstractScaler implements Scaler
     }
 
     /**
-     * @param mixed $maxWidth
+     * @param int $maxWidth
      *
-     * @return AbstractScaler
+     * @return ScalerInterface
      */
-    public function setMaxWidth(int $maxWidth)
+    public function setMaxWidth(int $maxWidth) :ScalerInterface
     {
         $this->maxWidth = $maxWidth;
 
@@ -53,18 +49,24 @@ abstract class AbstractScaler implements Scaler
     }
 
     /**
-     * @param mixed $stepModifier
+     * @param int $step
      *
-     * @return AbstractScaler
+     * @return ScalerInterface
      */
-    public function setStepModifier(int $stepModifier)
+    public function setStep(int $step) :ScalerInterface
     {
-        $this->stepModifier = $stepModifier;
+        $this->step = $step;
 
         return $this;
     }
 
-    public function setIncludeSource(bool $includeSource): Scaler
+    /**
+     * Include source
+     *
+     * @param bool $includeSource
+     * @return ScalerInterface
+     */
+    public function setIncludeSource(bool $includeSource) :ScalerInterface
     {
         $this->includeSource = $includeSource;
 

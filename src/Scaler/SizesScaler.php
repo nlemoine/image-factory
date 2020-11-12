@@ -23,11 +23,9 @@ class SizesScaler extends AbstractScaler
     }
 
     /**
-     * @param Image       $imageObject
-     *
-     * @return array
+     * @inheritDoc
      */
-    public function scale($image) : array
+    public function scale() : array
     {
         return $this->sizes;
     }

@@ -4,7 +4,7 @@ namespace HelloNico\ImageFactory;
 
 use HelloNico\ImageFactory\Scaler\RangeScaler;
 use HelloNico\ImageFactory\Scaler\SizesScaler;
-use HelloNico\ImageFactory\Scaler\Scaler;
+use HelloNico\ImageFactory\Scaler\ScalerInterface;
 use Spatie\Image\Image;
 use Spatie\Image\Manipulations;
 use Symfony\Component\Filesystem\Filesystem;
@@ -15,22 +15,132 @@ use Spatie\Image\GlideConversion;
 
 class ResponsiveImage extends Image
 {
+
+    /**
+     * Filesystem
+     *
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * Source path
+     *
+     * @var string
+     */
     private $sourcePath;
+
+    /**
+     * Cache path
+     *
+     * @var string
+     */
     private $cachePath;
+
+    /**
+     * Public path
+     *
+     * @var string
+     */
+    private $publicPath;
+
+    /**
+     * Base URL
+     *
+     * @var string
+     */
     private $baseUrl;
+
+    /**
+     * Rebase
+     *
+     * @var bool
+     */
     private $rebase;
+
+    /**
+     * Max memory limit
+     *
+     * @var string
+     */
     private $maxMemoryLimit;
+
+    /**
+     * Optimize
+     *
+     * @var bool
+     */
     private $optimize;
+
+    /**
+     * Optimization options
+     *
+     * @var array
+     */
     private $optimizationOptions;
+
+    /**
+     * Has srcset
+     *
+     * @var boolean
+     */
     private $hasSrcSet = false;
-    private $dataUri = false;
+
+    /**
+     * Has datauri
+     *
+     * @var boolean
+     */
+    private $hasDataUri = false;
+
+    /**
+     * Original path
+     *
+     * @var string
+     */
     private $originalImagePath;
 
+    /**
+     * Scaler
+     *
+     * @var ScalerInterface|string
+     */
     private $scaler;
+
+    /**
+     * Max width
+     *
+     * @var int
+     */
     private $minWidth;
+
+    /**
+     * Max width
+     *
+     * @var int
+     */
     private $maxWidth;
+
+    /**
+     * Step
+     *
+     * @var int
+     */
     private $step;
+
+    /**
+     * Sizes
+     *
+     * @var array
+     */
     private $sizes = [];
+
+    /**
+     * Batch
+     *
+     * @var int
+     */
+    private $batch = 3;
 
     public function __construct(string $pathToImage)
     {
@@ -46,7 +156,7 @@ class ResponsiveImage extends Image
      *
      * @return string
      */
-    public function __toString()
+    public function __toString() :string
     {
         if ($this->getHasSrcset()) {
             return $this->getSrcSet();
@@ -59,12 +169,12 @@ class ResponsiveImage extends Image
      *
      * @return string
      */
-    public function getSrc()
+    public function getSrc() :string
     {
         $imagePath = $this->generateImage();
 
         // Return data uri
-        if ($this->getDataUri()) {
+        if ($this->getHasDataUri()) {
             return $this->getBase64($imagePath);
         }
         // Return URL
@@ -76,12 +186,12 @@ class ResponsiveImage extends Image
      *
      * @return string
      */
-    public function getSrcSet()
+    public function getSrcSet() :string
     {
         $srcset = $this->getSrcSetSources();
 
         if (empty($srcset)) {
-            return;
+            return '';
         }
 
         \ksort($srcset);
@@ -98,7 +208,7 @@ class ResponsiveImage extends Image
      */
     public function getSrcSetSources(): array
     {
-        $sizes = $this->scaler->scale($this);
+        $sizes = $this->scaler->scale();
 
         // start by wider images
         rsort($sizes);
@@ -122,7 +232,7 @@ class ResponsiveImage extends Image
             // Set height while keeping aspect ratio
             // @todo List manipulations that needs recalculating height
             if ($this->hasManipulation('crop') && $originalWidth && $originalHeight) {
-                $height = floor(($originalHeight / $originalWidth) * $width);
+                $height = intval(round(($originalHeight / $originalWidth) * $width));
                 $this->height($height);
             }
 
@@ -149,6 +259,8 @@ class ResponsiveImage extends Image
 
     /**
      * Set srcset scaler
+     *
+     * @return ResponsiveImage
      */
     public function srcset() :ResponsiveImage
     {
@@ -187,9 +299,14 @@ class ResponsiveImage extends Image
      * Manipulate image
      *
      * @param array|callable|Manipulations $manipulations
+     *
+     * @return ResponsiveImage
      */
     public function manipulate($manipulations): ResponsiveImage
     {
+        if (!is_array($manipulations)) {
+            parent::manipulate($manipulations);
+        }
         if (isset($manipulations['srcset'])) {
             $args = [];
             // range scaler
@@ -203,7 +320,7 @@ class ResponsiveImage extends Image
         }
 
         if (!empty($manipulations['datauri'])) {
-            $this->setDataUri(true);
+            $this->setHasDataUri(true);
         }
 
         unset($manipulations['srcset'], $manipulations['datauri']);
@@ -246,6 +363,7 @@ class ResponsiveImage extends Image
      * Get cache filename
      *
      * @param string $imagePath Relative path to image
+     *
      * @return string
      */
     private function getCacheFilename($imagePath) :string
@@ -291,7 +409,6 @@ class ResponsiveImage extends Image
     /**
      * Get cache file path
      *
-     * @param string $imageRelativePath
      * @return string
      */
     private function getCacheFilePath() :string
@@ -327,6 +444,7 @@ class ResponsiveImage extends Image
      * Resolve URL
      *
      * @param string $imageCachePath
+     *
      * @return string
      */
     private function resolveUrl($imageCachePath) :string
@@ -343,8 +461,8 @@ class ResponsiveImage extends Image
     private function validateManipulations()
     {
         if (
-            $this->manipulations->hasManipulation('datauri')
-            && $this->manipulations->hasManipulation('srcset')
+            $this->getHasSrcset()
+            && $this->getHasDataUri()
         ) {
             throw new \Exception('srcset and datauri can’t be used together');
         }
@@ -353,9 +471,11 @@ class ResponsiveImage extends Image
     /**
      * Generate image
      *
-     * @param string $return
+     * @param string $imageCachePath
+     *
+     * @return string
      */
-    public function generateImage(string $imageCachePath = '')
+    public function generateImage(string $imageCachePath = '') :string
     {
         // Prevent datauri / srcset together
         $this->validateManipulations();
@@ -395,6 +515,8 @@ class ResponsiveImage extends Image
      * Set source path
      *
      * @param string $sourcePath
+     *
+     * @return ResponsiveImage
      */
     public function setSourcePath($sourcePath) :ResponsiveImage
     {
@@ -417,6 +539,8 @@ class ResponsiveImage extends Image
      * Set cache path
      *
      * @param string $cachePath
+     *
+     * @return ResponsiveImage
      */
     public function setCachePath($cachePath) :ResponsiveImage
     {
@@ -439,6 +563,8 @@ class ResponsiveImage extends Image
      * Set public path
      *
      * @param string $publicPath
+     *
+     * @return ResponsiveImage
      */
     public function setPublicPath($publicPath) :ResponsiveImage
     {
@@ -461,6 +587,8 @@ class ResponsiveImage extends Image
      * Set rebase
      *
      * @param bool $rebase
+     *
+     * @return ResponsiveImage
      */
     public function setRebase($rebase) :ResponsiveImage
     {
@@ -482,10 +610,11 @@ class ResponsiveImage extends Image
     /**
      * Set optimize
      *
-     * @param string $cachePath
-     * @param mixed  $optimize
+     * @param bool  $optimize
+     *
+     * @return ResponsiveImage
      */
-    public function setOptimize($optimize)
+    public function setOptimize($optimize) :ResponsiveImage
     {
         $this->optimize = $optimize;
 
@@ -506,6 +635,8 @@ class ResponsiveImage extends Image
      * Set optimization options
      *
      * @see https://docs.spatie.be/image/v1/image-manipulations/optimizing-images/
+     *
+     * @return ResponsiveImage
      */
     public function setOptimizationOptions(array $options)
     {
@@ -528,6 +659,8 @@ class ResponsiveImage extends Image
      * Set base URL
      *
      * @param string $baseUrl
+     *
+     * @return ResponsiveImage
      */
     public function setBaseUrl($baseUrl) :ResponsiveImage
     {
@@ -551,19 +684,19 @@ class ResponsiveImage extends Image
      *
      * @param string $scaler
      *
-     * @return Scaler
+     * @return ResponsiveImage
      */
     public function setScaler($scaler) :ResponsiveImage
     {
         switch ($scaler) {
             case 'range':
-                $scaler = new RangeScaler($this);
+                $scaler = new RangeScaler();
                 $scaler->setMinWidth($this->getMinWidth());
                 $scaler->setMaxWidth($this->getMaxWidth());
-                $scaler->setStepModifier($this->getStep());
+                $scaler->setStep($this->getStep());
                 break;
             case 'sizes':
-                $scaler = new SizesScaler($this);
+                $scaler = new SizesScaler();
                 $scaler->setSizes($this->getSizes());
                 break;
         }
@@ -576,9 +709,9 @@ class ResponsiveImage extends Image
     /**
      * Get scaler
      *
-     * @return Scaler
+     * @return ScalerInterface
      */
-    public function getScaler() :Scaler
+    public function getScaler() :ScalerInterface
     {
         return $this->scaler;
     }
@@ -587,6 +720,8 @@ class ResponsiveImage extends Image
      * Set min width
      *
      * @param int $minWidth
+     *
+     * @return ResponsiveImage
      */
     public function setMinWidth(int $minWidth) :ResponsiveImage
     {
@@ -598,7 +733,7 @@ class ResponsiveImage extends Image
     /**
      * Get min width
      *
-     * @return string $minWidth
+     * @return int $minWidth
      */
     public function getMinWidth() :int
     {
@@ -609,6 +744,7 @@ class ResponsiveImage extends Image
      * Set max width
      *
      * @param int $maxWidth
+     * @return ResponsiveImage
      */
     public function setMaxWidth(int $maxWidth) :ResponsiveImage
     {
@@ -620,7 +756,7 @@ class ResponsiveImage extends Image
     /**
      * Get max width
      *
-     * @return string $maxWidth
+     * @return int $maxWidth
      */
     public function getMaxWidth() :int
     {
@@ -631,6 +767,8 @@ class ResponsiveImage extends Image
      * Set step
      *
      * @param int $step
+     *
+     * @return ResponsiveImage
      */
     public function setStep(int $step) :ResponsiveImage
     {
@@ -653,6 +791,8 @@ class ResponsiveImage extends Image
      * Set sizes
      *
      * @param array $sizes
+     *
+     * @return ResponsiveImage
      */
     public function setSizes(array $sizes) :ResponsiveImage
     {
@@ -675,6 +815,8 @@ class ResponsiveImage extends Image
      * Set max memory limit
      *
      * @param string $limit
+     *
+     * @return ResponsiveImage
      */
     public function setMaxMemoryLimit($limit) :ResponsiveImage
     {
@@ -696,11 +838,13 @@ class ResponsiveImage extends Image
     /**
      * Set datauri
      *
-     * @param bool $bool
+     * @param bool $hasDataUri
+     *
+     * @return ResponsiveImage
      */
-    public function setDataUri(bool $bool) :ResponsiveImage
+    public function setHasDataUri(bool $hasDataUri) :ResponsiveImage
     {
-        $this->dataUri = $bool;
+        $this->hasDataUri = $hasDataUri;
 
         return $this;
     }
@@ -708,21 +852,21 @@ class ResponsiveImage extends Image
     /**
      * Get datauri
      *
-     * @param bool $bool
+     * @return bool
      */
-    public function getDataUri()
+    public function getHasDataUri() :bool
     {
-        return $this->dataUri;
+        return $this->hasDataUri;
     }
 
     /**
      * Enable datauri
      *
-     * @return
+     * @return ResponsiveImage
      */
     public function datauri() :ResponsiveImage
     {
-        $this->setDataUri(true);
+        $this->setHasDataUri(true);
 
         return $this;
     }
@@ -731,6 +875,8 @@ class ResponsiveImage extends Image
      * Set has srcset
      *
      * @param bool $bool
+     *
+     * @return ResponsiveImage
      */
     public function setHasSrcset(bool $bool) :ResponsiveImage
     {
@@ -744,7 +890,7 @@ class ResponsiveImage extends Image
      *
      * @return bool
      */
-    public function getHasSrcset()
+    public function getHasSrcset() :bool
     {
         return $this->hasSrcSet;
     }
@@ -753,6 +899,8 @@ class ResponsiveImage extends Image
      * Set batch
      *
      * @param int $batch
+     *
+     * @return ResponsiveImage
      */
     public function setBatch(int $batch) :ResponsiveImage
     {
@@ -766,20 +914,24 @@ class ResponsiveImage extends Image
      *
      * @return int
      */
-    public function getBatch()
+    public function getBatch() :int
     {
         return $this->batch;
     }
 
     /**
      * Get base64 encoded image datauri
+     *
+     * @param string $path
+     *
+     * @return string
      */
-    private function getBase64($path)
+    private function getBase64($path) :string
     {
         $data = \file_get_contents($path);
         if (!$data) {
             // @todo throw
-            return;
+            return '';
         }
 
         $mimeTypes = new MimeTypes();
@@ -816,7 +968,7 @@ class ResponsiveImage extends Image
      * @param int $height
      * @param string $cropMethod
      *
-     * @return $this
+     * @return ResponsiveImage
      *
      * @throws InvalidManipulation
      */
@@ -830,7 +982,7 @@ class ResponsiveImage extends Image
      * @param int $height
      * @param string $fitMethod
      *
-     * @return $this
+     * @return ResponsiveImage
      *
      * @throws InvalidManipulation
      */

@@ -2,8 +2,6 @@
 
 namespace HelloNico\ImageFactory;
 
-use InvalidArgumentException;
-
 class Factory
 {
     /**
@@ -15,6 +13,8 @@ class Factory
 
     /**
      * ImageFactory constructor
+     *
+     * @param array $config
      */
     public function __construct(array $config = [])
     {
@@ -22,10 +22,9 @@ class Factory
     }
 
     /**
-     * @param string $src
-     * @param mixed  $imagePath
+     * @param string  $imagePath
      *
-     * @return Image
+     * @return ResponsiveImage|bool
      */
     public function create($imagePath)
     {
@@ -56,7 +55,7 @@ class Factory
     /**
      * Get driver
      *
-     * @return null|string
+     * @return string
      */
     public function getDriver() :string
     {
@@ -66,12 +65,14 @@ class Factory
     /**
      * Get source path
      *
-     * @return null|string
+     * @throws \InvalidArgumentException
+     *
+     * @return string
      */
     public function getSourcePath() :string
     {
         if (!isset($this->config['sourcePath'])) {
-            throw new InvalidArgumentException('A "sourcePath" must be set.');
+            throw new \InvalidArgumentException('A "sourcePath" must be set.');
         }
 
         return $this->config['sourcePath'];
@@ -80,12 +81,14 @@ class Factory
     /**
      * Get cache path
      *
-     * @return null|string
+     * @throws \InvalidArgumentException
+     *
+     * @return string
      */
     public function getCachePath() :string
     {
         if (!isset($this->config['cachePath'])) {
-            throw new InvalidArgumentException('A "cachePath" must be set.');
+            throw new \InvalidArgumentException('A "cachePath" must be set.');
         }
 
         return $this->config['cachePath'];
@@ -94,12 +97,14 @@ class Factory
     /**
      * Get public path
      *
-     * @return null|string
+     * @throws \InvalidArgumentException
+     *
+     * @return string
      */
     public function getPublicPath() :string
     {
         if (!isset($this->config['publicPath'])) {
-            throw new InvalidArgumentException('A "publicPath" must be set.');
+            throw new \InvalidArgumentException('A "publicPath" must be set.');
         }
 
         return $this->config['publicPath'];
@@ -158,7 +163,7 @@ class Factory
     }
 
     /**
-     * Get base URL
+     * Get max memory limit
      *
      * @return string
      */
@@ -200,7 +205,7 @@ class Factory
     /**
      * Get step modifier
      *
-     * @return string
+     * @return int
      */
     public function getStep() :int
     {

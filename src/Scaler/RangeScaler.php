@@ -4,13 +4,11 @@ namespace HelloNico\ImageFactory\Scaler;
 
 class RangeScaler extends AbstractScaler
 {
+
     /**
-     * @param Image       $imageObject
-     * @param mixed       $image
-     *
-     * @return array
+     * @inheritDoc
      */
-    public function scale($image)
+    public function scale() :array
     {
         $sizes = [];
 
@@ -19,7 +17,7 @@ class RangeScaler extends AbstractScaler
             if (!$this->maxWidth || $width <= $this->maxWidth) {
                 $sizes[] = (int) $width;
             }
-            $width = $width + $this->stepModifier;
+            $width = $width + $this->step;
         }
 
         return $sizes;

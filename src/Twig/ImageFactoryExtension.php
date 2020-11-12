@@ -9,7 +9,18 @@ use Twig\TwigFilter;
 
 class ImageFactoryExtension extends AbstractExtension
 {
+    /**
+     * Image factory
+     *
+     * @var Factory
+     */
     private $factory;
+
+    /**
+     * Allowed manipulations
+     *
+     * @var array
+     */
     private $manipulations;
 
     public function __construct(Factory $factory)
@@ -19,13 +30,14 @@ class ImageFactoryExtension extends AbstractExtension
     }
 
     /**
-     * Call manipulation.
+     * Call manipulation
      *
      * @param string $name
+     * @param array $arguments
      *
-     * @return Image
+     * @return ResponsiveImage
      */
-    public function __call($name, array $arguments = [])
+    public function __call($name, array $arguments = []) :ResponsiveImage
     {
         $image = $arguments[0];
 
@@ -37,6 +49,8 @@ class ImageFactoryExtension extends AbstractExtension
         }
 
         $args = isset($arguments[1]) ? $arguments[1] : [];
+
+        $name = $name === 'to' ? 'format' : $name;
 
         if ('manipulate' === $name) {
             $image->{$name}($args);
@@ -50,7 +64,7 @@ class ImageFactoryExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFilters()
+    public function getFilters() :array
     {
         $filters = \array_map(function ($manipulation) {
             return new TwigFilter(
@@ -95,7 +109,7 @@ class ImageFactoryExtension extends AbstractExtension
             'mergeManipulations',
             'getManipulationSequence',
             'isEmpty',
-            'getFirstManipulationArgument'
+            'getFirstManipulationArgument',
         ];
         $manipulations = array_filter($manipulations, function ($method) use ($excludes) {
             return !in_array($method, $excludes, true);
@@ -105,7 +119,7 @@ class ImageFactoryExtension extends AbstractExtension
         return array_merge($manipulations, [
             'manipulate',
             'datauri',
-            'srcset'
+            'srcset',
         ]);
     }
 }

@@ -55,7 +55,7 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_can_output_datauri()
+    public function it_can_generate_datauri()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
         $image->width(200)->datauri(true);
@@ -110,9 +110,9 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_can_output_srcset()
+    public function it_can_generate_srcset()
     {
-        $image = $this->getFactory(['batch' => 0])->create(__DIR__ . '/images/image.jpg');
+        $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
 
         $image->srcset([100, 200, 300, 400]);
         $targets = $image->getSrcSetSources();
@@ -126,7 +126,7 @@ class ResponsiveImageTest extends TestCase
     /** @test */
     public function it_can_output_srcset_by_batch()
     {
-        $image = $this->getFactory(['batch' => 2])->create(__DIR__ . '/images/image.jpg');
+        $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
 
         $image->srcset([100, 200, 300, 400, 500]);
         $targets = $image->getSrcSetSources();
@@ -153,10 +153,15 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    // public function it_can_prevent_srcset_and_datauri()
-    // {
-    //     $image = $this->getFactory()->create(__DIR__ . '/images/image.jpg');
-    // }
+    public function it_can_prevent_srcset_and_datauri()
+    {
+        $this->expectException(\Exception::class);
+
+        $image = $this->getFactory()->create($this->getTestJpg());
+        $image->srcset()->datauri();
+
+        $image->generateImage();
+    }
 
     protected function assertImageType(string $filePath, $expectedType)
     {
