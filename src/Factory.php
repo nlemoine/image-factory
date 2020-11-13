@@ -2,6 +2,8 @@
 
 namespace HelloNico\ImageFactory;
 
+use Spatie\ImageOptimizer\OptimizerChain;
+
 class Factory
 {
     /**
@@ -44,8 +46,13 @@ class Factory
         $image->setScaler($this->getScaler());
         $image->setBaseUrl($this->getBaseUrl());
         $image->setOptimize($this->getOptimize());
+        $optimizerChain = $this->getOptimizerChain();
+        if ($optimizerChain instanceof OptimizerChain) {
+            $image->setOptimizeChain($optimizerChain);
+        }
         $image->setOptimizationOptions($this->getOptimizationOptions());
         $image->setMaxMemoryLimit($this->getMaxMemoryLimit());
+        $image->setMaxExecutionTime($this->getMaxExecutionTime());
         $image->setBatch($this->getBatch());
         $image->useImageDriver($this->getDriver());
 
@@ -139,6 +146,20 @@ class Factory
     }
 
     /**
+     * Get optimizater chain
+     *
+     * @return array
+     */
+    public function getOptimizerChain() :array
+    {
+        if (isset($this->config['optimizerChain'])) {
+            return $this->config['optimizerChain'];
+        }
+
+        return [];
+    }
+
+    /**
      * Get optimization options
      *
      * @return array
@@ -170,6 +191,16 @@ class Factory
     public function getMaxMemoryLimit() :string
     {
         return $this->config['maxMemoryLimit'] ?? '';
+    }
+
+    /**
+     * Get max execution time
+     *
+     * @return int
+     */
+    public function getMaxExecutionTime() :int
+    {
+        return $this->config['maxExecutionTime'] ?? 120;
     }
 
     /**

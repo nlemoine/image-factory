@@ -55,6 +55,19 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
+    public function it_handles_multiple_optimize_calls()
+    {
+        $factory = $this->getFactory();
+        $image = $factory->create($this->getTestJpg());
+        $image->width(100)->optimize()->apply()->blur(5);
+
+        $image2 = $factory->create($this->getTestJpg());
+        $image2->width(100)->apply()->blur(5)->optimize();
+
+        $this->assertEquals($image->generateImage(), $image2->generateImage());
+    }
+
+    /** @test */
     public function it_can_generate_datauri()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
@@ -150,6 +163,17 @@ class ResponsiveImageTest extends TestCase
             $this->assertFileExists($target);
         }
         $this->assertEquals(count($targets), 5);
+    }
+
+    /** @test */
+    public function it_can_output_srcset_starting_by_highest_width()
+    {
+        $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
+
+        $image->srcset([100, 200, 300, 400, 500]);
+        $targets = $image->getSrcSetSources();
+
+        $this->assertEquals(array_key_first($targets), '500');
     }
 
     /** @test */
