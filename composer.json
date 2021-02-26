@@ -16,7 +16,7 @@
         "league/glide": "dev-fix-rounding-issue as 1.7"
     },
     "require-dev":{
-        "phpunit/phpunit": "^9.0",
+        "phpunit/phpunit": "^8.0 || ^9.0",
         "phpstan/phpstan": "^0.12.54",
         "vimeo/psalm": "^4.1"
     },
