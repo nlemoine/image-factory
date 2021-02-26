@@ -187,8 +187,8 @@ class ResponsiveImageTest extends TestCase
 
         $image->srcset([100, 200, 300, 400, 500]);
         $targets = $image->getSrcSetSources();
-
-        $this->assertEquals(array_key_first($targets), '500');
+        reset($targets);
+        $this->assertEquals(key($targets), '500');
     }
 
     /** @test */
