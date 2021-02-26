@@ -33,5 +33,4 @@ class ImageFactoryExtensionTest extends TestCase
         $extension->whoops('file');
     }
 
-
 }

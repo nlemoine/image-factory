@@ -9,32 +9,47 @@ class ResponsiveImageTest extends TestCase
 {
 
     /** @test */
+    public function is_can_convert_from_jpeg_to_avif()
+    {
+        $image = $this->getFactory()->create($this->getTestJpg());
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
+
+    /** @test */
     public function it_can_modify_an_image_using_manipulations()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
-        $image->width(300);
+        $image->width(500);
 
         $target = $image->generateImage();
+        $size = getimagesize($target);
 
         $this->assertFileExists($target);
+        $this->assertEquals(500, $size[0]);
     }
 
     /** @test */
     public function it_can_crop_an_image_with_reordered_parameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
-        $image->crop(300, 100);
+        $image->crop(500, 200);
 
         $target = $image->generateImage();
+        $size = getimagesize($target);
 
         $this->assertFileExists($target);
+        $this->assertEquals(500, $size[0]);
+        $this->assertEquals(200, $size[1]);
     }
 
     /** @test */
     public function it_can_fit_an_image_with_reordered_parameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
-        $image->fit(300, 100);
+        $image->fit(500, 200);
 
         $target = $image->generateImage();
 
@@ -84,7 +99,7 @@ class ResponsiveImageTest extends TestCase
     /** @test */
     public function it_can_rebase_path()
     {
-        $image = $this->getFactory(['rebase' => true])->create('image.jpg');
+        $image = $this->getFactory(['rebase' => true])->create('10/image.jpg');
         $image->width(200)->datauri(true);
 
         $target = $image->generateImage();

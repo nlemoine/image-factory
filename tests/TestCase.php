@@ -72,4 +72,5 @@ abstract class TestCase extends PHPUnitTestCase
 
         return $method->invokeArgs($object, $parameters);
     }
+
 }

@@ -6,10 +6,11 @@ use HelloNico\ImageFactory\Scaler\RangeScaler;
 use HelloNico\ImageFactory\Scaler\SizesScaler;
 use HelloNico\ImageFactory\Scaler\ScalerInterface;
 use Spatie\Image\Image;
-use Spatie\Image\Manipulations;
+use HelloNico\ImageFactory\Manipulations;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Mime\MimeTypes;
 use Spatie\Image\Exceptions\InvalidManipulation;
+use Symfony\Component\Process\Process;
 
 class ResponsiveImage extends Image
 {
@@ -247,6 +248,10 @@ class ResponsiveImage extends Image
                 $this->height($height);
             }
 
+            // If srcset is called only, if not rebased
+            // @todo maybe check if pathToImage is absolute
+            $this->pathToImage = $this->resolveImageSourcePath($this->originalImagePath);
+
             $imageCachePath = $this->getImageCachePath();
 
             if ($batch) {
@@ -396,7 +401,8 @@ class ResponsiveImage extends Image
 
         // Change output extension
         if ($this->manipulations->hasManipulation('format')) {
-            $extension = $this->manipulations->getManipulationArgument('format');
+            $format = $this->manipulations->getManipulationArgument('format');
+            $extension = $format === 'avif' ? $extension : $format;
         }
 
         return implode('-', array_filter($parts)) . '.' . $extension;
@@ -409,7 +415,7 @@ class ResponsiveImage extends Image
      */
     private function getImageCachePath()
     {
-        $relativeImagePath = $this->resolveImagerelativePath($this->pathToImage);
+        $relativeImagePath = $this->resolveImageRelativePath($this->pathToImage);
 
         $dirname = \pathinfo($relativeImagePath, PATHINFO_DIRNAME);
         $dirname = '.' === $dirname ? '' : $dirname;
@@ -427,7 +433,7 @@ class ResponsiveImage extends Image
      * @param string $imageSourcePath
      * @return string
      */
-    private function resolveImagerelativePath(string $imageSourcePath) :string
+    private function resolveImageRelativePath(string $imageSourcePath) :string
     {
         if (false === strpos($imageSourcePath, $this->getSourcePath())) {
             return pathinfo($imageSourcePath, PATHINFO_BASENAME);
@@ -544,12 +550,10 @@ class ResponsiveImage extends Image
 
         // Create manipulated image
         try {
-            parent::save($imageCachePath);
+            return $this->save($imageCachePath);
         } catch (\Exception $e) {
             return $e->getMessage();
         }
-
-        return $imageCachePath;
     }
 
     /**
@@ -1051,6 +1055,47 @@ class ResponsiveImage extends Image
         } else {
             return round((float) $size);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function save($imageCachePath = '')
+    {
+        // Handle avif
+        $is_avif = $this->manipulations->getFirstManipulationArgument('format') === 'avif';
+
+        // Remove format/optimize manipulations (not handled by spatie/image yet)
+        if ($is_avif) {
+            $this->manipulations->removeManipulation('format');
+            $this->manipulations->removeManipulation('optimize');
+        }
+
+        parent::save($imageCachePath);
+
+        if (!$is_avif) {
+            return $imageCachePath;
+        }
+
+        $args = [
+            dirname(__DIR__) . '/bin/mac/cavif',
+            '--quiet',
+            '--overwrite',
+            '--quality=56',
+            '--speed=5',
+            $imageCachePath
+        ];
+
+        $process = new Process($args);
+        // Convert manipulated image to avif
+
+        // avif supported, restore source extension
+        $process->run();
+        if (!$process->isSuccessful()) {
+
+        }
+
+        return str_replace('jpg', 'avif', $imageCachePath);
     }
 
     /**
