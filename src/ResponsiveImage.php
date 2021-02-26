@@ -11,6 +11,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Mime\MimeTypes;
 use Spatie\Image\Exceptions\InvalidManipulation;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class ResponsiveImage extends Image
 {
@@ -1078,7 +1079,7 @@ class ResponsiveImage extends Image
         }
 
         $args = [
-            dirname(__DIR__) . '/bin/mac/cavif',
+            dirname(__DIR__) . '/bin/linux-generic/cavif',
             '--quiet',
             '--overwrite',
             '--quality=56',
@@ -1090,9 +1091,10 @@ class ResponsiveImage extends Image
         // Convert manipulated image to avif
 
         // avif supported, restore source extension
-        $process->run();
-        if (!$process->isSuccessful()) {
-
+        try {
+            $process->mustRun();
+        } catch (ProcessFailedException $exception) {
+            return $exception->getMessage();
         }
 
         return str_replace('jpg', 'avif', $imageCachePath);
