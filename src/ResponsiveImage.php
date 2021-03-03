@@ -222,7 +222,7 @@ class ResponsiveImage extends Image
         $originalHeight = $this->manipulations->getManipulationArgument('height');
 
         $srcset = [];
-        $batch = !empty($this->getBatch()) ? $this->getBatch() : 0;
+        $batch = $this->getBatch();
 
         foreach ($sizes as $i => $width) {
             if ($this->manipulations->hasManipulation('width')) {

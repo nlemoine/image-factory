@@ -3,23 +3,23 @@
 namespace HelloNico\ImageFactory\Test;
 
 use HelloNico\ImageFactory\Factory;
-use Spatie\TemporaryDirectory\TemporaryDirectory;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 abstract class TestCase extends PHPUnitTestCase
 {
-    /** @var \Spatie\TemporaryDirectory\TemporaryDirectory */
-    protected $tempDir;
-
     protected $factory;
 
     protected function setUp(): void
     {
-        $this->tempDir = (new TemporaryDirectory(__DIR__ . '/images'))
-            ->name('cache')
-            ->force()
-            ->create()
-            ->empty();
+        $filesystem = new Filesystem();
+        $cachePath = __DIR__ . '/images/cache';
+        try {
+            $filesystem->remove($cachePath);
+            $filesystem->mkdir($cachePath);
+        } catch (IOExceptionInterface $exception) {
+        }
     }
 
     protected function getFactory(array $parameters = [])
@@ -72,5 +72,4 @@ abstract class TestCase extends PHPUnitTestCase
 
         return $method->invokeArgs($object, $parameters);
     }
-
 }
