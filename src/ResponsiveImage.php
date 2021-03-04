@@ -101,13 +101,6 @@ class ResponsiveImage extends Image
     private $hasDataUri = false;
 
     /**
-     * Original path
-     *
-     * @var string
-     */
-    private $originalImagePath;
-
-    /**
      * Scaler
      *
      * @var ScalerInterface|string
@@ -149,11 +142,12 @@ class ResponsiveImage extends Image
      */
     private $batch = 3;
 
-    public function __construct(string $pathToImage)
+    public function __construct(string $pathToImage, string $sourcePath)
     {
         $this->filesystem = new Filesystem();
-        $this->originalImagePath = $this->pathToImage = $pathToImage;
         $this->manipulations = new Manipulations();
+        $this->setSourcePath($sourcePath);
+        $this->pathToImage = $this->resolveImageSourcePath($pathToImage);
     }
 
     /**
@@ -251,7 +245,7 @@ class ResponsiveImage extends Image
 
             // If srcset is called only, if not rebased
             // @todo maybe check if pathToImage is absolute
-            $this->pathToImage = $this->resolveImageSourcePath($this->originalImagePath);
+            // $this->pathToImage = $this->resolveImageSourcePath($this->originalImagePath);
 
             $imageCachePath = $this->getImageCachePath();
 
@@ -285,26 +279,25 @@ class ResponsiveImage extends Image
 
         $this->setHasSrcset(true);
 
-        // sizes scaler
+        // Sizes scaler
         if (count($args) === 1 && is_array($args[0])) {
             $this->setSizes($args[0]);
             $this->setScaler('sizes');
         }
 
-        // range scaler
+        // Range scaler
         if (in_array(count($args), [2, 3], true)) {
             $minWidth = $args[0];
             $maxWidth = $args[1];
-            $step = $args[2] ?? null;
 
             if ($minWidth >= $maxWidth) {
-                throw new \InvalidArgumentException(sprintf('min width (%d) must be greater than maw width (%d)', $minWidth, $maxWidth));
+                throw new \InvalidArgumentException(sprintf('min width (%d) must be greater than max width (%d)', $minWidth, $maxWidth));
             }
 
             $this->setMinWidth($minWidth);
             $this->setMaxWidth($maxWidth);
-            if (!empty($step)) {
-                $this->setStep($step);
+            if (!empty($args[2])) {
+                $this->setStep($args[2]);
             }
             $this->setScaler('range');
         }
@@ -340,6 +333,7 @@ class ResponsiveImage extends Image
             $this->setHasDataUri(true);
         }
 
+        // Remove unknown manipulations
         unset($manipulations['srcset'], $manipulations['datauri']);
 
         if (\is_array($manipulations)) {
@@ -382,7 +376,6 @@ class ResponsiveImage extends Image
         // }
 
         $parts[] = $suffix;
-
 
         // Sort manipulations to avoid different hash for identical manipulations
         $manipulations = array_map(function ($m) {
@@ -510,8 +503,6 @@ class ResponsiveImage extends Image
     {
         // Prevent datauri / srcset together
         $this->validateManipulations();
-
-        $this->pathToImage = $this->resolveImageSourcePath($this->originalImagePath);
 
         // Get cached file path
         $imageCachePath = $imageCachePath ?: $this->getImageCachePath();
@@ -1060,6 +1051,7 @@ class ResponsiveImage extends Image
 
     /**
      * @inheritDoc
+     * @return string
      */
     public function save($imageCachePath = '')
     {
@@ -1132,8 +1124,6 @@ class ResponsiveImage extends Image
      * @param string $filePath
      *
      * @return $this
-     *
-     * @throws FileNotFoundException
      */
     public function watermark(string $filePath)
     {

@@ -34,8 +34,7 @@ class Factory
             return false;
         }
 
-        $image = new ResponsiveImage($imagePath);
-        $image->setSourcePath($this->getSourcePath());
+        $image = new ResponsiveImage($imagePath, $this->getSourcePath());
         $image->setCachePath($this->getCachePath());
         $image->setPublicPath($this->getPublicPath());
         $image->setRebase($this->getRebase());
