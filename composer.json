@@ -34,8 +34,6 @@
             "HelloNico\\ImageFactory\\Test\\": "tests"
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "scripts": {
         "analyze": "vendor/bin/phpstan analyze",
         "fix": "php-cs-fixer fix tests",
