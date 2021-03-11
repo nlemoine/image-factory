@@ -8,7 +8,7 @@
         }
     ],
     "require": {
-        "spatie/image": "dev-master",
+        "spatie/image": "1.10.3",
         "symfony/mime": "^5.1",
         "symfony/process": "^5.2",
         "twig/twig": "^2.4 || ^3.0"
