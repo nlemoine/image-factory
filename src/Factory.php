@@ -7,16 +7,14 @@ use Spatie\ImageOptimizer\OptimizerChain;
 class Factory
 {
     /**
-     * Configuration parameters
+     * Configuration parameters.
      *
      * @var array
      */
     protected $config;
 
     /**
-     * ImageFactory constructor
-     *
-     * @param array $config
+     * ImageFactory constructor.
      */
     public function __construct(array $config = [])
     {
@@ -24,19 +22,20 @@ class Factory
     }
 
     /**
-     * @param string  $imagePath
-     *
-     * @return ResponsiveImage|bool
+     * @param string $imagePath
      */
-    public function create($imagePath)
+    public function create($imagePath): ?ResponsiveImage
     {
         if (!\is_string($imagePath)) {
-            return false;
+            return null;
         }
 
-        $image = new ResponsiveImage($imagePath, $this->getSourcePath());
-        $image->setCachePath($this->getCachePath());
-        $image->setPublicPath($this->getPublicPath());
+        $image = new ResponsiveImage(
+            $imagePath,
+            $this->getSourcePath(),
+            $this->getCachePath(),
+            $this->getPublicPath()
+        );
         $image->setRebase($this->getRebase());
         $image->setMinWidth($this->getMinWidth());
         $image->setMaxWidth($this->getMaxWidth());
@@ -45,6 +44,7 @@ class Factory
         $image->setScaler($this->getScaler());
         $image->setBaseUrl($this->getBaseUrl());
         $image->setOptimize($this->getOptimize());
+        $image->setFilenameFormat($this->getFilenameFormat());
         $optimizerChain = $this->getOptimizerChain();
         if ($optimizerChain instanceof OptimizerChain) {
             $image->setOptimizeChain($optimizerChain);
@@ -59,23 +59,19 @@ class Factory
     }
 
     /**
-     * Get driver
-     *
-     * @return string
+     * Get driver.
      */
-    public function getDriver() :string
+    public function getDriver(): string
     {
         return $this->config['driver'] ?? 'gd';
     }
 
     /**
-     * Get source path
+     * Get source path.
      *
      * @throws \InvalidArgumentException
-     *
-     * @return string
      */
-    public function getSourcePath() :string
+    public function getSourcePath(): string
     {
         if (!isset($this->config['sourcePath'])) {
             throw new \InvalidArgumentException('A "sourcePath" must be set.');
@@ -85,13 +81,11 @@ class Factory
     }
 
     /**
-     * Get cache path
+     * Get cache path.
      *
      * @throws \InvalidArgumentException
-     *
-     * @return string
      */
-    public function getCachePath() :string
+    public function getCachePath(): string
     {
         if (!isset($this->config['cachePath'])) {
             throw new \InvalidArgumentException('A "cachePath" must be set.');
@@ -101,13 +95,11 @@ class Factory
     }
 
     /**
-     * Get public path
+     * Get public path.
      *
      * @throws \InvalidArgumentException
-     *
-     * @return string
      */
-    public function getPublicPath() :string
+    public function getPublicPath(): string
     {
         if (!isset($this->config['publicPath'])) {
             throw new \InvalidArgumentException('A "publicPath" must be set.');
@@ -117,11 +109,9 @@ class Factory
     }
 
     /**
-     * Get rebase
-     *
-     * @return bool
+     * Get rebase.
      */
-    public function getRebase() :bool
+    public function getRebase(): bool
     {
         if (isset($this->config['rebase'])) {
             return $this->config['rebase'];
@@ -131,11 +121,9 @@ class Factory
     }
 
     /**
-     * Get optimize
-     *
-     * @return bool
+     * Get optimize.
      */
-    public function getOptimize() :bool
+    public function getOptimize(): bool
     {
         if (isset($this->config['optimize'])) {
             return $this->config['optimize'];
@@ -145,11 +133,9 @@ class Factory
     }
 
     /**
-     * Get optimizater chain
-     *
-     * @return array
+     * Get optimizater chain.
      */
-    public function getOptimizerChain() :array
+    public function getOptimizerChain(): array
     {
         if (isset($this->config['optimizerChain'])) {
             return $this->config['optimizerChain'];
@@ -159,11 +145,9 @@ class Factory
     }
 
     /**
-     * Get optimization options
-     *
-     * @return array
+     * Get optimization options.
      */
-    public function getOptimizationOptions() :array
+    public function getOptimizationOptions(): array
     {
         if (isset($this->config['optimizationOptions'])) {
             return $this->config['optimizationOptions'];
@@ -173,92 +157,84 @@ class Factory
     }
 
     /**
-     * Get base URL
-     *
-     * @return string
+     * Get base URL.
      */
-    public function getBaseUrl() :string
+    public function getBaseUrl(): ?string
     {
-        return $this->config['baseUrl'] ?? '';
+        return $this->config['baseUrl'] ?? null;
     }
 
     /**
-     * Get max memory limit
-     *
-     * @return string
+     * Get max memory limit.
      */
-    public function getMaxMemoryLimit() :string
+    public function getMaxMemoryLimit(): ?string
     {
-        return $this->config['maxMemoryLimit'] ?? '';
+        return $this->config['maxMemoryLimit'] ?? null;
     }
 
     /**
-     * Get max execution time
-     *
-     * @return int
+     * Get max execution time.
      */
-    public function getMaxExecutionTime() :int
+    public function getMaxExecutionTime(): int
     {
         return $this->config['maxExecutionTime'] ?? 120;
     }
 
     /**
-     * Get scaler
-     *
-     * @return string
+     * Get scaler.
      */
-    public function getScaler() :string
+    public function getScaler(): string
     {
         return $this->config['scaler'] ?? 'range';
     }
 
     /**
-     * Get min width
-     *
-     * @return int
+     * Get min width.
      */
-    public function getMinWidth() :int
+    public function getMinWidth(): int
     {
         return $this->config['minWidth'] ?? 300;
     }
 
     /**
-     * Get max width
-     *
-     * @return int
+     * Get max width.
      */
-    public function getMaxWidth() :int
+    public function getMaxWidth(): int
     {
         return $this->config['maxWidth'] ?? 1000;
     }
 
     /**
-     * Get step modifier
-     *
-     * @return int
+     * Get step modifier.
      */
-    public function getStep() :int
+    public function getStep(): int
     {
         return $this->config['step'] ?? 100;
     }
 
     /**
-     * Get sizes
-     *
-     * @return array
+     * Get sizes.
      */
-    public function getSizes() :array
+    public function getSizes(): array
     {
         return $this->config['sizes'] ?? [];
     }
 
     /**
-     * Get batch
-     *
-     * @return int
+     * Get batch.
      */
-    public function getBatch() :int
+    public function getBatch(): int
     {
         return $this->config['batch'] ?? 3;
+    }
+
+    /**
+     * Get filename format function.
+     *
+     * @return null|callable|string
+     */
+    public function getFilenameFormat()
+    {
+        return $this->config['filenameFormat'] ?? null;
     }
 }

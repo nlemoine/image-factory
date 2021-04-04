@@ -4,24 +4,22 @@
     "authors": [
         {
             "name": "Nicolas Lemoine",
-            "email": "nico.lemoine@gmail.com"
+            "email": "dev@niconico.fr"
         }
     ],
     "require": {
         "spatie/image": "1.10.3",
         "symfony/mime": "^5.1",
         "symfony/process": "^5.2",
-        "twig/twig": "^2.4 || ^3.0"
+        "loophp/phposinfo": "^1.7",
+        "twig/twig": "^2.4 || ^3.0",
+        "jawira/case-converter": "^3.4"
     },
     "require-dev": {
         "phpstan/phpstan": "^0.12.54",
         "phpunit/phpunit": "^8.0 || ^9.0",
         "symfony/filesystem": "^5.2",
         "vimeo/psalm": "^4.1"
-    },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist"
     },
     "autoload": {
         "psr-4": {
@@ -35,7 +33,7 @@
     },
     "scripts": {
         "analyze": "vendor/bin/phpstan analyze",
-        "fix": "php-cs-fixer fix tests",
+        "fix": "php-cs-fixer fix --allow-risky=yes",
         "test": "vendor/bin/phpunit --testdox --colors=always"
     }
 }

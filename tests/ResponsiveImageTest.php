@@ -2,43 +2,100 @@
 
 namespace HelloNico\ImageFactory\Test;
 
-use HelloNico\ImageFactory\ResponsiveImage;
-use HelloNico\ImageFactory\Factory;
+use Spatie\Image\Manipulations;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class ResponsiveImageTest extends TestCase
 {
+    /** @test */
+    public function isCanConvertFromJpegToAvif()
+    {
+        $image = $this->getFactory()->create($this->getTestJpg());
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
 
     /** @test */
-    // public function is_can_convert_from_jpeg_to_avif()
-    // {
-    //     $image = $this->getFactory()->create($this->getTestJpg());
-    //     $image->format('avif');
+    public function isCanConvertFromPngToAvif()
+    {
+        $image = $this->getFactory()->create('github.png');
+        $image->format('avif');
 
-    //     $target = $image->generateImage();
-    //     $this->assertFileExists($target);
-    // }
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
 
     /** @test */
-    public function it_can_modify_an_image_using_manipulations()
+    public function isCanConvertFromGifToAvif()
+    {
+        $image = $this->getFactory()->create('github.gif');
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
+
+    /** @test */
+    public function itCanUseACallableCustomFilename()
+    {
+        $image = $this->getFactory([
+            'filenameFormat' => function (string $imagePath, string $filename, string $hash, Manipulations $manipulations) {
+                return 'title';
+            },
+        ])->create($this->getTestJpg());
+        $image->width(500)->format('jpg');
+        $target = $image->generateImage();
+
+        $this->assertEquals('title.jpg', \basename($target));
+    }
+
+    /** @test */
+    public function itCanUseAStringCustomFilename()
+    {
+        $image = $this->getFactory([
+            'filenameFormat' => '{name}-my-super-cool-seo-title',
+        ])->create('image.jpg');
+        $image->width(500)->format('jpg');
+        $target = $image->generateImage();
+
+        $this->assertEquals('image-my-super-cool-seo-title.jpg', \basename($target));
+    }
+
+    /** @test */
+    public function itWillNormalizeFileExtension()
+    {
+        $image = $this->getFactory()->create('surfboards.JPEG');
+        $target = $image->generateImage();
+
+        $this->assertEquals('jpg', \pathinfo($target, PATHINFO_EXTENSION));
+    }
+
+    /** @test */
+    public function itCanModifyAnImageUsingManipulations()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
         $image->width(500);
 
         $target = $image->generateImage();
-        $size = getimagesize($target);
+        $size = \getimagesize($target);
 
         $this->assertFileExists($target);
         $this->assertEquals(500, $size[0]);
     }
 
     /** @test */
-    public function it_can_crop_an_image_with_reordered_parameters()
+    public function itCanCropAnImageWithReorderedParameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
         $image->crop(500, 200);
 
         $target = $image->generateImage();
-        $size = getimagesize($target);
+        $size = \getimagesize($target);
 
         $this->assertFileExists($target);
         $this->assertEquals(500, $size[0]);
@@ -46,7 +103,7 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_can_fit_an_image_with_reordered_parameters()
+    public function itCanFitAnImageWithReorderedParameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
         $image->fit(500, 200);
@@ -57,7 +114,7 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_does_not_care_about_manipulations_order()
+    public function itDoesNotCareAboutManipulationsOrder()
     {
         $factory = $this->getFactory();
         $image = $factory->create($this->getTestJpg());
@@ -70,7 +127,7 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_multiple_optimize_calls()
+    public function itHandlesMultipleOptimizeCalls()
     {
         $factory = $this->getFactory();
         $image = $factory->create($this->getTestJpg());
@@ -83,69 +140,70 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function it_can_generate_datauri()
+    public function itCanGenerateDatauri()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
         $image->width(1)->datauri(true);
 
         $data = $image->getSrc();
 
-        $this->assertTrue(false !== strpos($data, 'data:image/jpeg'));
+        $this->assertTrue(false !== \strpos($data, 'data:image/jpeg'));
     }
 
     /** @test */
-    public function it_can_rebase_path()
+    public function itCanRebasePath()
     {
         $image = $this->getFactory(['rebase' => true])->create('10/image.jpg');
         $image->width(200)->datauri(true);
 
         $target = $image->generateImage();
 
-        $this->assertEquals($image->getCachePath(), pathinfo($target, PATHINFO_DIRNAME));
+        $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
     /** @test */
-    public function it_can_handle_special_characters()
+    public function itCanHandleSpecialCharacters()
     {
+        // @todo check again
         $image = $this->getFactory()->create('11/éimage.jpg');
         $image->width(200);
 
         $target = $image->generateImage();
-        $this->assertSame('é', mb_substr(pathinfo($target, PATHINFO_BASENAME), 0, 1));
+        $this->assertSame('é', \mb_substr(\pathinfo($target, PATHINFO_BASENAME), 0, 1));
     }
 
     /** @test */
-    public function it_can_add_base_url()
+    public function itCanAddBaseUrl()
     {
         $image = $this->getFactory(['baseUrl' => 'https://example.com'])->create('image.jpg');
 
         $url = $image->getSrc();
 
-        $this->assertEquals(parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST), 'https://example.com');
+        $this->assertEquals(\parse_url($url, PHP_URL_SCHEME).'://'.\parse_url($url, PHP_URL_HOST), 'https://example.com');
     }
 
     /** @test */
-    public function it_can_handle_an_absolute_path()
+    public function itCanHandleAnAbsolutePath()
     {
-        $image = $this->getFactory()->create(__DIR__ . '/images/source/image.jpg');
+        $image = $this->getFactory()->create(__DIR__.'/images/source/image.jpg');
 
         $target = $image->generateImage();
 
-        $this->assertEquals($image->getCachePath(), pathinfo($target, PATHINFO_DIRNAME));
+        $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
     /** @test */
-    public function it_can_handle_an_absolute_path_outside_source()
+    public function itCanHandleAnAbsolutePathOutsideSource()
     {
-        $image = $this->getFactory()->create(__DIR__ . '/images/image.jpg');
+        $image = $this->getFactory()->create(__DIR__.'/images/image.jpg');
 
         $target = $image->generateImage();
 
-        $this->assertEquals($image->getCachePath(), pathinfo($target, PATHINFO_DIRNAME));
+        $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
     /** @test */
-    public function it_can_generate_srcset()
+    public function itCanGenerateSrcset()
     {
         $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
 
@@ -155,11 +213,11 @@ class ResponsiveImageTest extends TestCase
         foreach ($targets as $target) {
             $this->assertFileExists($target);
         }
-        $this->assertEquals(count($targets), 4);
+        $this->assertEquals(\count($targets), 4);
     }
 
     /** @test */
-    public function it_can_generate_srcset_and_keep_folders()
+    public function itCanGenerateSrcsetAndKeepFolders()
     {
         $image = $this->getFactory(['batch' => 0])->create('10/image.jpg');
 
@@ -167,12 +225,12 @@ class ResponsiveImageTest extends TestCase
         $targets = $image->getSrcSetSources();
 
         foreach ($targets as $target) {
-            $this->assertEquals($image->getCachePath() . '/10', pathinfo($target, PATHINFO_DIRNAME));
+            $this->assertEquals($image->getCachePath().'/10', \pathinfo($target, PATHINFO_DIRNAME));
         }
     }
 
     /** @test */
-    public function it_can_generate_srcset_by_batch()
+    public function itCanGenerateSrcsetByBatch()
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
 
@@ -183,36 +241,36 @@ class ResponsiveImageTest extends TestCase
         foreach ($targets as $target) {
             $this->assertFileExists($target);
         }
-        $this->assertEquals(count($targets), 2);
+        $this->assertEquals(\count($targets), 2);
 
         // Second batch
         $targets = $image->getSrcSetSources();
         foreach ($targets as $target) {
             $this->assertFileExists($target);
         }
-        $this->assertEquals(count($targets), 4);
+        $this->assertEquals(\count($targets), 4);
 
         // Third batch
         $targets = $image->getSrcSetSources();
         foreach ($targets as $target) {
             $this->assertFileExists($target);
         }
-        $this->assertEquals(count($targets), 5);
+        $this->assertEquals(\count($targets), 5);
     }
 
     /** @test */
-    public function it_can_generate_srcset_starting_by_highest_width()
+    public function itCanGenerateSrcsetStartingByHighestWidth()
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
 
         $image->srcset([100, 200, 300, 400, 500]);
         $targets = $image->getSrcSetSources();
-        reset($targets);
-        $this->assertEquals(key($targets), '500');
+        \reset($targets);
+        $this->assertEquals(\key($targets), '500');
     }
 
     /** @test */
-    public function it_can_prevent_srcset_and_datauri()
+    public function itCanPreventSrcsetAndDatauri()
     {
         $this->expectException(\Exception::class);
 
@@ -221,5 +279,4 @@ class ResponsiveImageTest extends TestCase
 
         $image->generateImage();
     }
-
 }

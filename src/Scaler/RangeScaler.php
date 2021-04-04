@@ -4,11 +4,10 @@ namespace HelloNico\ImageFactory\Scaler;
 
 class RangeScaler extends AbstractScaler
 {
-
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function scale() :array
+    public function scale(): array
     {
         $sizes = [];
 

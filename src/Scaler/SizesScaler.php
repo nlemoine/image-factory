@@ -4,18 +4,15 @@ namespace HelloNico\ImageFactory\Scaler;
 
 class SizesScaler extends AbstractScaler
 {
-
     /**
      * @var array
      */
     private $sizes = [];
 
     /**
-     * @param array $sizes
-     *
-     * @return SizesScaler
+     * Set sizes.
      */
-    public function setSizes(array $sizes) : SizesScaler
+    public function setSizes(array $sizes): SizesScaler
     {
         $this->sizes = $sizes;
 
@@ -23,9 +20,9 @@ class SizesScaler extends AbstractScaler
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function scale() : array
+    public function scale(): array
     {
         return $this->sizes;
     }

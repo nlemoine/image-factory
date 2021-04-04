@@ -4,20 +4,22 @@ namespace HelloNico\ImageFactory\Twig;
 
 use HelloNico\ImageFactory\Factory;
 use HelloNico\ImageFactory\ResponsiveImage;
+use Jawira\CaseConverter\Convert;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
+use Spatie\Image\Exceptions\InvalidManipulation;
 
 class ImageFactoryExtension extends AbstractExtension
 {
     /**
-     * Image factory
+     * Image factory.
      *
      * @var Factory
      */
     private $factory;
 
     /**
-     * Allowed manipulations
+     * Allowed manipulations.
      *
      * @var array
      */
@@ -30,32 +32,32 @@ class ImageFactoryExtension extends AbstractExtension
     }
 
     /**
-     * Call manipulation
+     * Call manipulation.
      *
      * @param string $name
-     * @param array $arguments
      *
-     * @return ResponsiveImage
+     * @throws \InvalidArgumentException
+     * @throws InvalidManipulation
      */
-    public function __call($name, array $arguments = []) :ResponsiveImage
+    public function __call($name, array $arguments = []): ResponsiveImage
     {
         $image = $arguments[0];
 
-        if (is_string($image)) {
+        if (\is_string($image)) {
             $image = $this->factory->create($arguments[0]);
         }
         if (!$image instanceof ResponsiveImage) {
-            throw new \Exception('You must pass a string or a ResponsiveImage object');
+            throw new \InvalidArgumentException(\sprintf('You must pass a string or a %s object', ResponsiveImage::class));
         }
 
         $args = isset($arguments[1]) ? $arguments[1] : [];
 
-        $name = $name === 'to' ? 'format' : $name;
+        $methodName = new Convert($name);
 
         if ('manipulate' === $name) {
             $image->{$name}($args);
         } else {
-            $image->{$name}(...$args);
+            $image->{$methodName->fromSnake()->toCamel()}(...$args);
         }
 
         return $image;
@@ -64,9 +66,9 @@ class ImageFactoryExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFilters() :array
+    public function getFilters(): array
     {
-        $filters = \array_map(function ($manipulation) {
+        $filters = \array_map(function (string $manipulation) {
             return new TwigFilter(
                 $manipulation,
                 [$this, $manipulation],
@@ -83,22 +85,13 @@ class ImageFactoryExtension extends AbstractExtension
     }
 
     /**
-     * Get manipulations
-     *
-     * @return array
+     * Get manipulations.
      */
-    private function getManipulations() :array
+    private function getManipulations(): array
     {
         // Get a list of manipulations
-        $manipulations_class = new \ReflectionClass(\Spatie\Image\Manipulations::class);
-        $manipulations = array_map(function (\ReflectionMethod $method) {
-            $method_name = $method->getName();
+        $manipulationsClass = new \ReflectionClass(\Spatie\Image\Manipulations::class);
 
-            // `format` is a native Twig filter
-            return 'format' === $method_name ? 'to' : $method_name;
-        }, $manipulations_class->getMethods(\ReflectionMethod::IS_PUBLIC));
-
-        // Exclude non manipulations methods
         $excludes = [
             '__construct',
             'create',
@@ -111,12 +104,22 @@ class ImageFactoryExtension extends AbstractExtension
             'isEmpty',
             'getFirstManipulationArgument',
         ];
-        $manipulations = array_filter($manipulations, function ($method) use ($excludes) {
-            return !in_array($method, $excludes, true);
+
+        // Exclude non manipulations methods
+        $manipulations = \array_filter($manipulationsClass->getMethods(\ReflectionMethod::IS_PUBLIC), function (\ReflectionMethod $method) use ($excludes) {
+            return !\in_array($method->getName(), $excludes, true);
         });
 
+        $manipulations = \array_map(function (\ReflectionMethod $method) {
+            $methodName = new Convert($method->getName());
+            // `format` is a native Twig filter
+            $methodSnake = $methodName->fromCamel()->toSnake();
+
+            return 'format' === $methodSnake ? 'to' : $methodSnake;
+        }, $manipulations);
+
         // Add missing manipulations
-        return array_merge($manipulations, [
+        return \array_merge($manipulations, [
             'manipulate',
             'datauri',
             'srcset',

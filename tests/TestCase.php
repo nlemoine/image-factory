@@ -3,9 +3,12 @@
 namespace HelloNico\ImageFactory\Test;
 
 use HelloNico\ImageFactory\Factory;
+use HelloNico\ImageFactory\Twig\ImageFactoryExtension;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 abstract class TestCase extends PHPUnitTestCase
 {
@@ -14,7 +17,8 @@ abstract class TestCase extends PHPUnitTestCase
     protected function setUp(): void
     {
         $filesystem = new Filesystem();
-        $cachePath = __DIR__ . '/images/cache';
+        $cachePath = __DIR__.'/images/cache';
+
         try {
             $filesystem->remove($cachePath);
             $filesystem->mkdir($cachePath);
@@ -24,10 +28,10 @@ abstract class TestCase extends PHPUnitTestCase
 
     protected function getFactory(array $parameters = [])
     {
-        return new Factory(array_merge([
+        return new Factory(\array_merge([
             'sourcePath'   => $this->getSourceTestFolder(),
             'cachePath'    => $this->getCacheTestFolder(),
-            'publicPath'    => $this->getPublicTestFolder(),
+            'publicPath'   => $this->getPublicTestFolder(),
         ], $parameters));
     }
 
@@ -51,4 +55,14 @@ abstract class TestCase extends PHPUnitTestCase
         return __DIR__;
     }
 
+    protected function render($template)
+    {
+        $loader = new ArrayLoader([
+            'template' => $template,
+        ]);
+        $twig = new Environment($loader);
+        $twig->addExtension(new ImageFactoryExtension($this->getFactory()));
+
+        return $twig->render('template');
+    }
 }

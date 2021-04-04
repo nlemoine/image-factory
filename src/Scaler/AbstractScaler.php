@@ -25,11 +25,9 @@ abstract class AbstractScaler implements ScalerInterface
     protected $includeSource;
 
     /**
-     * @param int $minWidth
-     *
-     * @return ScalerInterface
+     * Set min width.
      */
-    public function setMinWidth(int $minWidth) :ScalerInterface
+    public function setMinWidth(int $minWidth): ScalerInterface
     {
         $this->minWidth = $minWidth;
 
@@ -37,11 +35,9 @@ abstract class AbstractScaler implements ScalerInterface
     }
 
     /**
-     * @param int $maxWidth
-     *
-     * @return ScalerInterface
+     * Set max width.
      */
-    public function setMaxWidth(int $maxWidth) :ScalerInterface
+    public function setMaxWidth(int $maxWidth): ScalerInterface
     {
         $this->maxWidth = $maxWidth;
 
@@ -49,11 +45,9 @@ abstract class AbstractScaler implements ScalerInterface
     }
 
     /**
-     * @param int $step
-     *
-     * @return ScalerInterface
+     * Set step.
      */
-    public function setStep(int $step) :ScalerInterface
+    public function setStep(int $step): ScalerInterface
     {
         $this->step = $step;
 
@@ -61,12 +55,9 @@ abstract class AbstractScaler implements ScalerInterface
     }
 
     /**
-     * Include source
-     *
-     * @param bool $includeSource
-     * @return ScalerInterface
+     * Include source.
      */
-    public function setIncludeSource(bool $includeSource) :ScalerInterface
+    public function setIncludeSource(bool $includeSource): ScalerInterface
     {
         $this->includeSource = $includeSource;
 
