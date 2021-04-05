@@ -819,11 +819,11 @@ class ResponsiveImage extends Image
         $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME).'/'.\pathinfo($imageCachePath, PATHINFO_FILENAME);
         $args = [
             $this->getAvifBinaryPath(),
-            '--quiet',
+            // '--quiet',
             '--overwrite',
             '--quality=56',
             '--speed=5',
-            sprintf('-o="%s"', $imageCachePathAvif),
+            sprintf('-o=%s', $imageCachePathAvif),
             $imageCachePath,
         ];
 
