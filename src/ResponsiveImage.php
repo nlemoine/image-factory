@@ -798,7 +798,7 @@ class ResponsiveImage extends Image
 
             // cavif can't convert gif to avif
             if (Manipulations::FORMAT_GIF === $sourceExtension) {
-                // Convert to PNG first ?
+                // Convert to PNG first
                 $sourceExtension = Manipulations::FORMAT_PNG;
             }
             $imageCachePath .= '.'.$sourceExtension;
@@ -823,7 +823,7 @@ class ResponsiveImage extends Image
             '--overwrite',
             '--quality=56',
             '--speed=5',
-            \sprintf('-o %s', $imageCachePathAvif),
+            sprintf('-o="%s"', $imageCachePathAvif),
             $imageCachePath,
         ];
 
@@ -883,7 +883,7 @@ class ResponsiveImage extends Image
         if (OsInfo::isFamily(FamilyName::LINUX)) {
             \array_push($binaryPath, 'linux', $arch, $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::DARWIN)) {
-            \array_push($binaryPath, 'osx', $arch, $binaryName);
+            \array_push($binaryPath, 'macos', $arch, $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::WINDOWS)) {
             \array_push($binaryPath, 'windows', $arch, $binaryName.'.exe');
         }
