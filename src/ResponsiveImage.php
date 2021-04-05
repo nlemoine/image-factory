@@ -799,7 +799,7 @@ class ResponsiveImage extends Image
             // cavif can't convert gif to avif
             if (Manipulations::FORMAT_GIF === $sourceExtension) {
                 // Convert to PNG first ?
-                // $sourceExtension = Manipulations::FORMAT_PNG;
+                $sourceExtension = Manipulations::FORMAT_PNG;
             }
             $imageCachePath .= '.'.$sourceExtension;
         }
