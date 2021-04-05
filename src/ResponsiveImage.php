@@ -823,7 +823,7 @@ class ResponsiveImage extends Image
             '--overwrite',
             '--quality=56',
             '--speed=5',
-            sprintf('-o=%s', $imageCachePathAvif),
+            sprintf('--output=%s', $imageCachePathAvif),
             $imageCachePath,
         ];
 
