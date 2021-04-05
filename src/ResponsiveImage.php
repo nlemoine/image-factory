@@ -819,7 +819,7 @@ class ResponsiveImage extends Image
         $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME).'/'.\pathinfo($imageCachePath, PATHINFO_FILENAME);
         $args = [
             $this->getAvifBinaryPath(),
-            '--quiet',
+            // '--quiet',
             '--overwrite',
             '--quality=56',
             '--speed=5',
@@ -846,7 +846,7 @@ class ResponsiveImage extends Image
      */
     public function crop(int $width, int $height, string $cropMethod = Manipulations::CROP_CENTER): ResponsiveImage
     {
-        return parent::__call('crop', [$cropMethod, $width, $height]);
+        return parent::__call(__METHOD__, [$cropMethod, $width, $height]);
     }
 
     /**
@@ -854,7 +854,7 @@ class ResponsiveImage extends Image
      */
     public function fit(int $width, int $height, string $fitMethod = Manipulations::FIT_FILL): ResponsiveImage
     {
-        return parent::__call('fit', [$fitMethod, $width, $height]);
+        return parent::__call(__METHOD__, [$fitMethod, $width, $height]);
     }
 
     /**
@@ -862,7 +862,7 @@ class ResponsiveImage extends Image
      */
     public function watermark(string $filePath)
     {
-        return parent::__call('watermark', $this->resolveImageSourcePath($filePath));
+        return parent::__call(__METHOD__, $this->resolveImageSourcePath($filePath));
     }
 
     /**

@@ -31,14 +31,14 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function isCanConvertFromGifToAvif()
-    {
-        $image = $this->getFactory()->create('github.gif');
-        $image->format('avif');
+    // public function isCanConvertFromGifToAvif()
+    // {
+    //     $image = $this->getFactory()->create('github.gif');
+    //     $image->format('avif');
 
-        $target = $image->generateImage();
-        $this->assertFileExists($target);
-    }
+    //     $target = $image->generateImage();
+    //     $this->assertFileExists($target);
+    // }
 
     /** @test */
     public function itCanUseACallableCustomFilename()
