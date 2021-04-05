@@ -12,7 +12,7 @@ jobs:
         php: ['7.4', '8.0']
         dependency-version: ['prefer-lowest', 'prefer-stable']
         include:
-          - os: 'mascos-latest'
+          - os: 'maccos-latest'
             php: '7.4'
             dependency-version: 'prefer-stable'
           - os: 'windows-latest'
