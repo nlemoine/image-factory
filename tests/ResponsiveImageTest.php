@@ -11,36 +11,6 @@ use Spatie\Image\Manipulations;
 class ResponsiveImageTest extends TestCase
 {
     /** @test */
-    public function isCanConvertFromJpegToAvif()
-    {
-        $image = $this->getFactory()->create($this->getTestJpg());
-        $image->format('avif');
-
-        $target = $image->generateImage();
-        $this->assertFileExists($target);
-    }
-
-    /** @test */
-    public function isCanConvertFromPngToAvif()
-    {
-        $image = $this->getFactory()->create('github.png');
-        $image->format('avif');
-
-        $target = $image->generateImage();
-        $this->assertFileExists($target);
-    }
-
-    /** @test */
-    // public function isCanConvertFromGifToAvif()
-    // {
-    //     $image = $this->getFactory()->create('github.gif');
-    //     $image->format('avif');
-
-    //     $target = $image->generateImage();
-    //     $this->assertFileExists($target);
-    // }
-
-    /** @test */
     public function itCanUseACallableCustomFilename()
     {
         $image = $this->getFactory([
@@ -278,5 +248,35 @@ class ResponsiveImageTest extends TestCase
         $image->srcset()->datauri();
 
         $image->generateImage();
+    }
+
+    /** @test */
+    public function isCanConvertFromJpegToAvif()
+    {
+        $image = $this->getFactory()->create($this->getTestJpg());
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
+
+    /** @test */
+    public function isCanConvertFromPngToAvif()
+    {
+        $image = $this->getFactory()->create('github.png');
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
+    }
+
+    /** @test */
+    public function isCanConvertFromGifToAvif()
+    {
+        $image = $this->getFactory()->create('github.gif');
+        $image->format('avif');
+
+        $target = $image->generateImage();
+        $this->assertFileExists($target);
     }
 }
