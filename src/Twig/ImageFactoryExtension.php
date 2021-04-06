@@ -5,9 +5,9 @@ namespace HelloNico\ImageFactory\Twig;
 use HelloNico\ImageFactory\Factory;
 use HelloNico\ImageFactory\ResponsiveImage;
 use Jawira\CaseConverter\Convert;
+use Spatie\Image\Exceptions\InvalidManipulation;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
-use Spatie\Image\Exceptions\InvalidManipulation;
 
 class ImageFactoryExtension extends AbstractExtension
 {

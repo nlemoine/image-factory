@@ -6,5 +6,5 @@ use Spatie\Image\Manipulations as SpatieManipulations;
 
 class Manipulations extends SpatieManipulations
 {
-    const FORMAT_AVIF = 'avif';
+    public const FORMAT_AVIF = 'avif';
 }

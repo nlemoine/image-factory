@@ -801,7 +801,7 @@ class ResponsiveImage extends Image
                 // Convert to PNG first
                 $sourceExtension = Manipulations::FORMAT_PNG;
             }
-            $imageCachePath .= '.'.$sourceExtension;
+            $imageCachePath .= '.' . $sourceExtension;
         }
 
         parent::save($imageCachePath);
@@ -816,7 +816,7 @@ class ResponsiveImage extends Image
 
         // }
 
-        $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME).'/'.\pathinfo($imageCachePath, PATHINFO_FILENAME);
+        $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
         $args = [
             $this->getAvifBinaryPath(),
             // '--quiet',
@@ -885,7 +885,7 @@ class ResponsiveImage extends Image
         } elseif (OsInfo::isFamily(FamilyName::DARWIN)) {
             \array_push($binaryPath, 'macos', $arch, $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::WINDOWS)) {
-            \array_push($binaryPath, 'windows', $arch, $binaryName.'.exe');
+            \array_push($binaryPath, 'windows', $arch, $binaryName . '.exe');
         }
 
         $binaryPath = \implode(DIRECTORY_SEPARATOR, $binaryPath);
@@ -926,7 +926,7 @@ class ResponsiveImage extends Image
         // Create a unique hash based on relative file path and manipulations
         // Important: use relative path to avoid hash changes when absolute folders change (e.g. different hosting/stage for example)
         // @todo if file is an absolute path, rebased -> conflict
-        $hash = \substr(\md5(\json_encode($manipulations).$relativeImagePath), 0, 8);
+        $hash = \substr(\md5(\json_encode($manipulations) . $relativeImagePath), 0, 8);
 
         // Get extension
         $extension = \pathinfo($relativeImagePath, PATHINFO_EXTENSION);
@@ -1002,10 +1002,10 @@ class ResponsiveImage extends Image
         $dirname = '.' === $dirname ? '' : $dirname;
 
         if (!empty($dirname)) {
-            $dirname = $this->getRebase() ? '' : $dirname.'/';
+            $dirname = $this->getRebase() ? '' : $dirname . '/';
         }
 
-        return $this->getCachePath().'/'.$dirname.$this->getCacheFilename($this->relativeImagePath);
+        return $this->getCachePath() . '/' . $dirname . $this->getCacheFilename($this->relativeImagePath);
     }
 
     /**
@@ -1029,7 +1029,7 @@ class ResponsiveImage extends Image
             return $imagePath;
         }
 
-        return $this->getSourcePath().'/'.$imagePath;
+        return $this->getSourcePath() . '/' . $imagePath;
     }
 
     /**
@@ -1039,7 +1039,7 @@ class ResponsiveImage extends Image
     {
         $imageRelativeUrl = \str_replace($this->getPublicPath(), '', $imageCachePath);
 
-        return $this->getBaseUrl() ? $this->getBaseUrl().$imageRelativeUrl : $imageRelativeUrl;
+        return $this->getBaseUrl() ? $this->getBaseUrl() . $imageRelativeUrl : $imageRelativeUrl;
     }
 
     /**
@@ -1102,13 +1102,13 @@ class ResponsiveImage extends Image
         $repr .= $mime;
 
         foreach ($parameters as $key => $value) {
-            $repr .= ';'.$key.'='.\rawurlencode($value);
+            $repr .= ';' . $key . '=' . \rawurlencode($value);
         }
 
         if (0 === \strpos($mime, 'text/')) {
-            $repr .= ','.\rawurlencode($data);
+            $repr .= ',' . \rawurlencode($data);
         } else {
-            $repr .= ';base64,'.\base64_encode($data);
+            $repr .= ';base64,' . \base64_encode($data);
         }
 
         return $repr;
