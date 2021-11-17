@@ -761,7 +761,7 @@ class ResponsiveImage extends Image
     /**
      * Set filename method.
      *
-     * @param callable|string $filenameFormat
+     * @param callable|null|string $filenameFormat
      */
     public function setFilenameFormat($filenameFormat): ResponsiveImage
     {
@@ -823,7 +823,7 @@ class ResponsiveImage extends Image
             '--overwrite',
             '--quality=56',
             '--speed=5',
-            sprintf('--output=%s', $imageCachePathAvif),
+            \sprintf('--output=%s', $imageCachePathAvif),
             $imageCachePath,
         ];
 
@@ -862,13 +862,13 @@ class ResponsiveImage extends Image
      */
     public function watermark(string $filePath)
     {
-        return parent::__call(__FUNCTION__, $this->resolveImageSourcePath($filePath));
+        return parent::__call(__FUNCTION__, $this->resolveAbsoluteImageSourcePath($filePath));
     }
 
     /**
      * Get binary path.
      *
-     * @throws Exception
+     * @throws \Exception
      *
      * @return string
      */
@@ -902,7 +902,8 @@ class ResponsiveImage extends Image
      */
     public function to(string $format): ResponsiveImage
     {
-        return $this->format($format);
+        $this->format($format);
+        return $this;
     }
 
     /**

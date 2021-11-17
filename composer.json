@@ -8,19 +8,19 @@
         }
     ],
     "require": {
-        "jawira/case-converter": "^3.4",
         "loophp/phposinfo": "^1.7",
         "spatie/image": "1.10.3",
         "symfony/filesystem": "^5.2",
         "symfony/mime": "^5.1",
         "symfony/process": "^5.2",
-        "twig/twig": "^2.4 || ^3.0"
+        "twig/twig": "^2.4 || ^3.0",
+        "intervention/image": "^2.7",
+        "symfony/string": "^5.3"
     },
     "require-dev": {
-        "phpstan/phpstan": "^0.12.54",
+        "phpstan/phpstan": "^1.0",
         "phpunit/phpunit": "^8.0 || ^9.0",
-        "symplify/easy-coding-standard": "^9.2",
-        "vimeo/psalm": "^4.1"
+        "symplify/easy-coding-standard": "^9.2"
     },
     "autoload": {
         "psr-4": {
@@ -34,7 +34,8 @@
     },
     "scripts": {
         "analyze": "vendor/bin/phpstan analyze",
-        "cs": "vendor/bin/ecs chack src",
+        "lint": "vendor/bin/ecs check src --fix",
+        "lint:fix": "vendor/bin/ecs check src --fix",
         "test": "vendor/bin/phpunit --testdox --colors=always"
     }
 }

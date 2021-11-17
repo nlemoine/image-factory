@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental == true }}
     strategy:
       fail-fast: true
       matrix:
@@ -12,6 +13,10 @@ jobs:
         php: ['7.4', '8.0']
         dependency-version: ['prefer-lowest', 'prefer-stable']
         include:
+          - os: 'ubuntu-latest'
+            php: '8.1'
+            dependency-version: 'prefer-stable'
+            experimental: true
           - os: 'macos-latest'
             php: '7.4'
             dependency-version: 'prefer-stable'

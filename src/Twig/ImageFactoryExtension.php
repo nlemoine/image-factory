@@ -4,9 +4,9 @@ namespace HelloNico\ImageFactory\Twig;
 
 use HelloNico\ImageFactory\Factory;
 use HelloNico\ImageFactory\ResponsiveImage;
-use Jawira\CaseConverter\Convert;
 use Spatie\Image\Exceptions\InvalidManipulation;
 use Twig\Extension\AbstractExtension;
+use function Symfony\Component\String\u;
 use Twig\TwigFilter;
 
 class ImageFactoryExtension extends AbstractExtension
@@ -52,12 +52,10 @@ class ImageFactoryExtension extends AbstractExtension
 
         $args = isset($arguments[1]) ? $arguments[1] : [];
 
-        $methodName = new Convert($name);
-
         if ('manipulate' === $name) {
-            $image->{$name}($args);
+            $image->manipulate($args);
         } else {
-            $image->{$methodName->fromSnake()->toCamel()}(...$args);
+            $image->{(string) u($name)->camel()}(...$args);
         }
 
         return $image;
@@ -111,9 +109,8 @@ class ImageFactoryExtension extends AbstractExtension
         });
 
         $manipulations = \array_map(function (\ReflectionMethod $method) {
-            $methodName = new Convert($method->getName());
             // `format` is a native Twig filter
-            $methodSnake = $methodName->fromCamel()->toSnake();
+            $methodSnake = (string) u($method)->snake();
 
             return 'format' === $methodSnake ? 'to' : $methodSnake;
         }, $manipulations);
