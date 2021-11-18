@@ -217,7 +217,7 @@ class Factory
      */
     public function getSizes(): array
     {
-        return $this->config['sizes'] ?? [];
+        return $this->config['sizes'] ?? [300, 768, 1024, 1200];
     }
 
     /**

@@ -788,7 +788,7 @@ class ResponsiveImage extends Image
     public function save($imageCachePath = '')
     {
         // Handle avif
-        $is_avif = Manipulations::FORMAT_AVIF === $this->manipulations->getFirstManipulationArgument('format');
+        $is_avif = Manipulations::FORMAT_AVIF === $this->manipulations->getFirstManipulationArgument('format') && !function_exists('imagecreatefromavif');
 
         // Remove format/optimize manipulations (not handled by spatie/image yet)
         if ($is_avif) {
@@ -810,16 +810,10 @@ class ResponsiveImage extends Image
             return $imageCachePath;
         }
 
-        // try {
-        //     $avifBinaryPath = $this->getAvifBinaryPath();
-        // } catch(\Exception $exception) {
-
-        // }
-
         $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
         $args = [
             $this->getAvifBinaryPath(),
-            // '--quiet',
+            '--quiet',
             '--overwrite',
             '--quality=56',
             '--speed=5',

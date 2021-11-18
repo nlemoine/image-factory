@@ -8,6 +8,7 @@
         }
     ],
     "require": {
+        "php": "^7.4|^8.0",
         "loophp/phposinfo": "^1.7",
         "spatie/image": "1.10.3",
         "symfony/filesystem": "^5.2",
