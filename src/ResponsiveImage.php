@@ -98,7 +98,7 @@ class ResponsiveImage extends Image
      *
      * @var bool
      */
-    private $hasSrcSet = false;
+    private $hasSrcset = false;
 
     /**
      * Has datauri.
@@ -171,16 +171,17 @@ class ResponsiveImage extends Image
         $this->relativeImagePath = $this->resolveRelativeImagePath();
     }
 
+    public function getManipulations(): Manipulations
+    {
+        return $this->manipulations;
+    }
+
     /**
      * To string.
      */
     public function __toString(): string
     {
-        if ($this->getHasSrcset()) {
-            return $this->getSrcSet();
-        }
-
-        return $this->getSrc();
+        return (string) $this->getSrc();
     }
 
     /**
@@ -201,6 +202,7 @@ class ResponsiveImage extends Image
         if ($this->getHasDataUri()) {
             return $this->getBase64($imagePath);
         }
+
         // Return URL
         return $this->resolveUrl($imagePath);
     }
@@ -208,17 +210,17 @@ class ResponsiveImage extends Image
     /**
      * Get srcset.
      */
-    public function getSrcSet(): string
+    public function getSrcset(): ?string
     {
-        $srcset = $this->getSrcSetSources();
+        $srcset = $this->getSrcsetSources();
 
         if (empty($srcset)) {
-            return '';
+            return null;
         }
 
         \ksort($srcset);
 
-        return \implode(',', \array_map(function (int $width, string $path) {
+        return \implode(',', \array_map(function (int $width, string $path) : string {
             return \sprintf('%s %dw', $this->resolveUrl($path), $width);
         }, \array_keys($srcset), $srcset));
     }
@@ -226,8 +228,15 @@ class ResponsiveImage extends Image
     /**
      * Get srcset sources.
      */
-    public function getSrcSetSources(): array
+    public function getSrcsetSources(): array
     {
+        if (!$this->getHasSrcset()) {
+            $width = $this->manipulations->getManipulationArgument('width');
+            return [
+                $width => $this->getSrc(),
+            ];
+        }
+
         $sizes = $this->scaler->scale();
 
         // Start with wider images
@@ -252,11 +261,7 @@ class ResponsiveImage extends Image
 
             // Recalculate height for manipulations changing aspect ratio
             if (
-                (
-                    $this->manipulations->hasManipulation('crop') // crop / focalCrop
-                    || $this->manipulations->hasManipulation('manualCrop')
-                    || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
-                )
+                $this->aspectRatioWillChange()
                 && $originalWidth
                 && $originalHeight
             ) {
@@ -727,7 +732,7 @@ class ResponsiveImage extends Image
      */
     public function setHasSrcset(bool $bool): ResponsiveImage
     {
-        $this->hasSrcSet = $bool;
+        $this->hasSrcset = $bool;
 
         return $this;
     }
@@ -737,7 +742,7 @@ class ResponsiveImage extends Image
      */
     public function getHasSrcset(): bool
     {
-        return $this->hasSrcSet;
+        return $this->hasSrcset;
     }
 
     /**
@@ -1062,6 +1067,41 @@ class ResponsiveImage extends Image
         if ($this->getOptimize()) {
             $this->optimize($this->getOptimizationOptions());
         }
+    }
+
+    /**
+     * Determine if image aspect ratio will change given current manipulations.
+     */
+    public function aspectRatioWillChange(): bool
+    {
+        $originalWidth = $this->manipulations->getManipulationArgument('width');
+        $originalHeight = $this->manipulations->getManipulationArgument('height');
+        if (
+            (
+                $this->manipulations->hasManipulation('crop') // crop / focalCrop
+                || $this->manipulations->hasManipulation('manualCrop')
+                || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
+            )
+            && $originalWidth
+            && $originalHeight
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getAspectRatio(): float
+    {
+        $manipulatedWidth = $this->manipulations->getManipulationArgument('width');
+        $manipulatedHeight = $this->manipulations->getManipulationArgument('height');
+
+        // Width and height are fixed
+        if($this->aspectRatioWillChange()) {
+            return $manipulatedWidth / $manipulatedHeight;
+        }
+
+        // Width and height are not fixed
+        return $this->getWidth() / $this->getHeight();
     }
 
     /**
