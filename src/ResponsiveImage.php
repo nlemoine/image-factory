@@ -261,7 +261,11 @@ class ResponsiveImage extends Image
 
             // Recalculate height for manipulations changing aspect ratio
             if (
-                $this->aspectRatioWillChange()
+                (
+                    $this->manipulations->hasManipulation('crop') // crop / focalCrop
+                    || $this->manipulations->hasManipulation('manualCrop')
+                    || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_FILL, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
+                )
                 && $originalWidth
                 && $originalHeight
             ) {
@@ -1080,7 +1084,7 @@ class ResponsiveImage extends Image
             (
                 $this->manipulations->hasManipulation('crop') // crop / focalCrop
                 || $this->manipulations->hasManipulation('manualCrop')
-                || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
+                || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_FILL, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
             )
             && $originalWidth
             && $originalHeight
