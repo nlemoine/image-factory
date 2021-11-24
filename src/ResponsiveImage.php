@@ -1141,10 +1141,10 @@ class ResponsiveImage extends Image
         $extension = $this->manipulations->getManipulationArgument('format');
         if(!$extension) {
             $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-            $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
         }
 
-        return sprintf('image/%s', strtolower($extension));
+        $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
+        return sprintf('image/%s', $extension);
     }
 
     /**
