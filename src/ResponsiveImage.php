@@ -916,6 +916,22 @@ class ResponsiveImage extends Image
      */
     private function getCacheFilename($relativeImagePath): string
     {
+        // Get extension
+        $extension = \pathinfo($relativeImagePath, PATHINFO_EXTENSION);
+        // Normalize extension
+        $extension = \str_replace('jpeg', 'jpg', \strtolower($extension));
+
+        $extensionTarget = $this->manipulations->getManipulationArgument('format');
+
+        if($extensionTarget) {
+            if($extensionTarget === $extension) {
+                // Avoid adding format manipulation to the hash if same as source
+                $this->manipulations->removeManipulation('format');
+            } else {
+                $extension = $extensionTarget;
+            }
+        }
+
         // Sort manipulations to avoid different hash for identical manipulations
         $manipulations = \array_map(function ($m) {
             // Remove optimize, can be called multiple times but is executed once
@@ -931,16 +947,6 @@ class ResponsiveImage extends Image
         // Important: use relative path to avoid hash changes when absolute folders change (e.g. different hosting/stage for example)
         // @todo if file is an absolute path, rebased -> conflict
         $hash = \substr(\md5(\json_encode($manipulations) . $relativeImagePath), 0, 8);
-
-        // Get extension
-        $extension = \pathinfo($relativeImagePath, PATHINFO_EXTENSION);
-        // Normalize extension
-        $extension = \str_replace('jpeg', 'jpg', \strtolower($extension));
-
-        // Change output extension
-        if ($this->manipulations->hasManipulation('format')) {
-            $extension = $this->manipulations->getManipulationArgument('format');
-        }
 
         $filename = \pathinfo($relativeImagePath, PATHINFO_FILENAME);
 
