@@ -797,7 +797,7 @@ class ResponsiveImage extends Image
     public function save($imageCachePath = '')
     {
         // Handle avif
-        $is_avif = Manipulations::FORMAT_AVIF === $this->manipulations->getFirstManipulationArgument('format') && !function_exists('imagecreatefromavif');
+        $is_avif = Manipulations::FORMAT_AVIF === $this->manipulations->getFirstManipulationArgument('format') && !\function_exists('imagecreatefromavif');
 
         // Remove format/optimize manipulations (not handled by spatie/image yet)
         if ($is_avif) {
