@@ -1136,19 +1136,15 @@ class ResponsiveImage extends Image
         return $this->formatDataUri($data, $mimes[0]);
     }
 
-    public function getTargetExtension(): string
+    public function getTargetMime(): string
     {
         $extension = $this->manipulations->getManipulationArgument('format');
-        if($extension) {
-            return strtolower($extension);
+        if(!$extension) {
+            $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+            $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
         }
 
-        // Get extension
-        $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-        // Normalize extension
-        $extension = \str_replace('jpeg', 'jpg', \strtolower($extension));
-
-        return $extension;
+        return sprintf('image/%s', strtolower($extension));
     }
 
     /**
