@@ -118,7 +118,6 @@ class ImageFactoryExtension extends AbstractExtension
         // Add missing manipulations
         return \array_merge($manipulations, [
             'manipulate',
-            'datauri',
             'srcset',
         ]);
     }

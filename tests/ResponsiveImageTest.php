@@ -113,9 +113,9 @@ class ResponsiveImageTest extends TestCase
     public function itCanGenerateDatauri()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
-        $image->width(1)->datauri(true);
+        $image->width(1);
 
-        $data = $image->getSrc();
+        $data = $image->getSrcBase64();
 
         $this->assertTrue(false !== \strpos($data, 'data:image/jpeg'));
     }
@@ -124,7 +124,7 @@ class ResponsiveImageTest extends TestCase
     public function itCanRebasePath()
     {
         $image = $this->getFactory(['rebase' => true])->create('10/image.jpg');
-        $image->width(200)->datauri(true);
+        $image->width(200);
 
         $target = $image->generateImage();
 
@@ -240,28 +240,21 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function itCanPreventSrcsetAndDatauri()
+    public function itCanConvertFromJpegToAvif()
     {
-        $this->expectException(\Exception::class);
-
-        $image = $this->getFactory()->create($this->getTestJpg());
-        $image->srcset()->datauri();
-
-        $image->generateImage();
-    }
-
-    /** @test */
-    public function isCanConvertFromJpegToAvif()
-    {
-        $image = $this->getFactory()->create($this->getTestJpg());
+        $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
         $image->format('avif');
+        $image->srcset([200, 300, 400]);
 
-        $target = $image->generateImage();
-        $this->assertFileExists($target);
+        $targets = $image->getSrcSetSources();
+        foreach ($targets as $target) {
+            $this->assertFileExists($target);
+        }
+        $this->assertEquals(\count($targets), 3);
     }
 
     /** @test */
-    public function isCanConvertFromPngToAvif()
+    public function itCanConvertFromPngToAvif()
     {
         $image = $this->getFactory()->create('github.png');
         $image->format('avif');
@@ -271,7 +264,7 @@ class ResponsiveImageTest extends TestCase
     }
 
     /** @test */
-    public function isCanConvertFromGifToAvif()
+    public function itCanConvertFromGifToAvif()
     {
         $image = $this->getFactory()->create('github.gif');
         $image->format('avif');

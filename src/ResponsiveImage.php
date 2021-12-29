@@ -101,13 +101,6 @@ class ResponsiveImage extends Image
     private $hasSrcset = false;
 
     /**
-     * Has datauri.
-     *
-     * @var bool
-     */
-    private $hasDataUri = false;
-
-    /**
      * Scaler.
      *
      * @var ScalerInterface|string
@@ -185,26 +178,39 @@ class ResponsiveImage extends Image
     }
 
     /**
+     * Get src as base 64
+     *
+     * @return string
+     */
+    public function getSrcBase64(): string
+    {
+        return $this->getBase64($this->getSrcPath());
+    }
+
+    /**
      * Get src.
      *
      * @throws \Exception
      */
     public function getSrc(): string
     {
+        // Return URL
+        return $this->resolveUrl($this->getSrcPath());
+    }
+
+    /**
+     * Get src absolute path
+     *
+     * @return string
+     */
+    public function getSrcPath(): string
+    {
         // throw error if missing public path / source path / cache path
         if (!$this->sourcePath || !$this->cachePath || !$this->publicPath) {
-            throw new \Exception('Either $this->publicPath, $this->sourcePath or $this->cachePath has not been set');
+            throw new \Exception('Either publicPath, sourcePath or cachePath has not been set');
         }
 
-        $imagePath = $this->generateImage();
-
-        // Return data uri
-        if ($this->getHasDataUri()) {
-            return $this->getBase64($imagePath);
-        }
-
-        // Return URL
-        return $this->resolveUrl($imagePath);
+        return $this->generateImage();
     }
 
     /**
@@ -355,12 +361,8 @@ class ResponsiveImage extends Image
             \call_user_func_array([$this, 'srcset'], $args);
         }
 
-        if (!empty($manipulations['datauri'])) {
-            $this->setHasDataUri(true);
-        }
-
         // Remove unknown manipulations
-        unset($manipulations['srcset'], $manipulations['datauri']);
+        unset($manipulations['srcset']);
 
         if (\is_array($manipulations)) {
             $manipulations = new Manipulations([$manipulations]);
@@ -375,7 +377,7 @@ class ResponsiveImage extends Image
      */
     public function generateImage(string $imageCachePath = ''): string
     {
-        // Prevent datauri / srcset together
+        // Validate manipulations
         $this->validateManipulations();
 
         // Get cached file path
@@ -704,34 +706,6 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Set datauri.
-     */
-    public function setHasDataUri(bool $hasDataUri): ResponsiveImage
-    {
-        $this->hasDataUri = $hasDataUri;
-
-        return $this;
-    }
-
-    /**
-     * Get datauri.
-     */
-    public function getHasDataUri(): bool
-    {
-        return $this->hasDataUri;
-    }
-
-    /**
-     * Enable datauri.
-     */
-    public function datauri(): ResponsiveImage
-    {
-        $this->setHasDataUri(true);
-
-        return $this;
-    }
-
-    /**
      * Set has srcset.
      */
     public function setHasSrcset(bool $bool): ResponsiveImage
@@ -796,29 +770,39 @@ class ResponsiveImage extends Image
      */
     public function save($imageCachePath = '')
     {
-        // Handle avif
-        $is_avif = Manipulations::FORMAT_AVIF === $this->manipulations->getFirstManipulationArgument('format') && !\function_exists('imagecreatefromavif');
-
-        // Remove format/optimize manipulations (not handled by spatie/image yet)
-        if ($is_avif) {
-            $this->manipulations->removeManipulation('format');
-            $this->manipulations->removeManipulation('optimize');
-            $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-
-            // cavif can't convert gif to avif
-            if (Manipulations::FORMAT_GIF === $sourceExtension) {
-                // Convert to PNG first
-                $sourceExtension = Manipulations::FORMAT_PNG;
-            }
-            $imageCachePath .= '.' . $sourceExtension;
-        }
-
-        parent::save($imageCachePath);
-
-        if (!$is_avif) {
+        // Are we dealing with AVIF?
+        if(
+            Manipulations::FORMAT_AVIF !== $this->manipulations->getFirstManipulationArgument('format')
+        ) {
+            parent::save($imageCachePath);
             return $imageCachePath;
         }
 
+        // Is AVIF supported natively?
+        if($this->isAvifSupported()) {
+            parent::save($imageCachePath);
+            return $imageCachePath;
+        }
+
+        // AVIF will be converted with cavif
+        $this->manipulations->removeManipulation('format');
+        $this->manipulations->removeManipulation('optimize');
+        $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+
+        // cavif can't convert gif to avif
+        if (Manipulations::FORMAT_GIF === $sourceExtension) {
+            // Convert to PNG first
+            $sourceExtension = Manipulations::FORMAT_PNG;
+        }
+        $imageCachePath .= '.' . $sourceExtension;
+
+        // Save manipulated image with the original format
+        parent::save($imageCachePath);
+
+        // Add avif format again, so srcset keeps the avif format
+        $this->to(Manipulations::FORMAT_AVIF);
+
+        // Convert to avif with the binary
         $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
         $args = [
             $this->getAvifBinaryPath(),
@@ -842,6 +826,20 @@ class ResponsiveImage extends Image
         @\unlink($imageCachePath);
 
         return $imageCachePathAvif;
+    }
+
+    /**
+     * Check for native AVIF support
+     *
+     * @return boolean
+     */
+    protected function isAvifSupported(): bool {
+        if($this->imageDriver === 'gd') {
+            return \function_exists('imagecreatefromavif');
+        } elseif($this->imageDriver === 'imagick') {
+            return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
+        }
+        return false;
     }
 
     /**
@@ -883,12 +881,13 @@ class ResponsiveImage extends Image
 
         $binaryName = 'cavif';
 
+        // TODO: throw exception if arch isn't 64 bits
         if (OsInfo::isFamily(FamilyName::LINUX)) {
-            \array_push($binaryPath, 'linux', $arch, $binaryName);
+            \array_push($binaryPath, 'linux', $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::DARWIN)) {
-            \array_push($binaryPath, 'macos', $arch, $binaryName);
+            \array_push($binaryPath, 'macos', $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::WINDOWS)) {
-            \array_push($binaryPath, 'windows', $arch, $binaryName . '.exe');
+            \array_push($binaryPath, 'windows', $binaryName . '.exe');
         }
 
         $binaryPath = \implode(DIRECTORY_SEPARATOR, $binaryPath);
@@ -902,6 +901,8 @@ class ResponsiveImage extends Image
 
     /**
      * Alias for format.
+     *
+     * Required for usage in Twig since Twig already has `format` filter
      */
     public function to(string $format): ResponsiveImage
     {
@@ -941,6 +942,7 @@ class ResponsiveImage extends Image
             return $m;
         }, $this->manipulations->toArray());
 
+        // TODO: maybe remove optimize if avif
         $manipulations['optimize'] = $this->getOptimize();
 
         // Create a unique hash based on relative file path and manipulations
@@ -986,6 +988,13 @@ class ResponsiveImage extends Image
         return \sprintf('%s.%s', $filenameFinal, $extension);
     }
 
+    /**
+     * Get default cache file name
+     *
+     * @param string $filename
+     * @param string $hash
+     * @return string
+     */
     private function getDefaultCacheFilename(string $filename, string $hash): string
     {
         $parts = [
@@ -1057,13 +1066,6 @@ class ResponsiveImage extends Image
      */
     private function validateManipulations(): void
     {
-        if (
-            $this->getHasSrcset()
-            && $this->getHasDataUri()
-        ) {
-            throw new \Exception('srcset and datauri can’t be used together');
-        }
-
         // Per image optimize parameter
         if ($this->manipulations->hasManipulation('optimize')) {
             $optimize = (bool) $this->manipulations->getFirstManipulationArgument('optimize');
@@ -1136,6 +1138,11 @@ class ResponsiveImage extends Image
         return $this->formatDataUri($data, $mimes[0]);
     }
 
+    /**
+     * Get target mime type
+     *
+     * @return string
+     */
     public function getTargetMime(): string
     {
         $extension = $this->manipulations->getManipulationArgument('format');
@@ -1144,7 +1151,7 @@ class ResponsiveImage extends Image
         }
 
         $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
-        return sprintf('image/%s', $extension);
+        return \sprintf('image/%s', $extension);
     }
 
     /**
