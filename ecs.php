@@ -14,6 +14,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->import(SetList::PSR_12);
     $containerConfigurator->import(SetList::NAMESPACES);
     $containerConfigurator->import(SetList::CLEAN_CODE);
+    $containerConfigurator->import(SetList::SYMFONY);
 
     $services = $containerConfigurator->services();
     $services->set(ArraySyntaxFixer::class)

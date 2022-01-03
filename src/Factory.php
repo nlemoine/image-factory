@@ -231,7 +231,7 @@ class Factory
     /**
      * Get filename format function.
      *
-     * @return null|callable|string
+     * @return callable|string|null
      */
     public function getFilenameFormat()
     {
