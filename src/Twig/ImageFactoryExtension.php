@@ -5,8 +5,8 @@ namespace HelloNico\ImageFactory\Twig;
 use HelloNico\ImageFactory\Factory;
 use HelloNico\ImageFactory\ResponsiveImage;
 use Spatie\Image\Exceptions\InvalidManipulation;
-use Twig\Extension\AbstractExtension;
 use function Symfony\Component\String\u;
+use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
 class ImageFactoryExtension extends AbstractExtension

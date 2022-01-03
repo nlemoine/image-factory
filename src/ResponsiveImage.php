@@ -226,7 +226,7 @@ class ResponsiveImage extends Image
 
         \ksort($srcset);
 
-        return \implode(',', \array_map(function (int $width, string $path) : string {
+        return \implode(',', \array_map(function (int $width, string $path): string {
             return \sprintf('%s %dw', $this->resolveUrl($path), $width);
         }, \array_keys($srcset), $srcset));
     }
@@ -771,15 +771,13 @@ class ResponsiveImage extends Image
     public function save($imageCachePath = '')
     {
         // Are we dealing with AVIF?
-        if(
-            Manipulations::FORMAT_AVIF !== $this->manipulations->getFirstManipulationArgument('format')
-        ) {
+        if (Manipulations::FORMAT_AVIF !== $this->manipulations->getFirstManipulationArgument('format')) {
             parent::save($imageCachePath);
             return $imageCachePath;
         }
 
         // Is AVIF supported natively?
-        if($this->isAvifSupported()) {
+        if ($this->isAvifSupported()) {
             parent::save($imageCachePath);
             return $imageCachePath;
         }
@@ -804,6 +802,7 @@ class ResponsiveImage extends Image
 
         // Convert to avif with the binary
         $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
+        // Settings from https://www.industrialempathy.com/posts/avif-webp-quality-settings/
         $args = [
             $this->getAvifBinaryPath(),
             '--quiet',
@@ -833,12 +832,16 @@ class ResponsiveImage extends Image
      *
      * @return boolean
      */
-    protected function isAvifSupported(): bool {
-        if($this->imageDriver === 'gd') {
+    protected function isAvifSupported(): bool
+    {
+        if ($this->imageDriver === 'gd') {
             return \function_exists('imagecreatefromavif');
-        } elseif($this->imageDriver === 'imagick') {
-            return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
         }
+        // AVIF encoding does not work well in Imagick yet
+        // https://github.com/ImageMagick/ImageMagick/issues/1432
+        // } elseif($this->imageDriver === 'imagick') {
+        //     return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
+        // }
         return false;
     }
 
@@ -924,8 +927,8 @@ class ResponsiveImage extends Image
 
         $extensionTarget = $this->manipulations->getManipulationArgument('format');
 
-        if($extensionTarget) {
-            if($extensionTarget === $extension) {
+        if ($extensionTarget) {
+            if ($extensionTarget === $extension) {
                 // Avoid adding format manipulation to the hash if same as source
                 $this->manipulations->removeManipulation('format');
             } else {
@@ -1108,7 +1111,7 @@ class ResponsiveImage extends Image
         $manipulatedHeight = $this->manipulations->getManipulationArgument('height');
 
         // Width and height are fixed
-        if($this->aspectRatioWillChange()) {
+        if ($this->aspectRatioWillChange()) {
             return $manipulatedWidth / $manipulatedHeight;
         }
 
@@ -1146,7 +1149,7 @@ class ResponsiveImage extends Image
     public function getTargetMime(): string
     {
         $extension = $this->manipulations->getManipulationArgument('format');
-        if(!$extension) {
+        if (!$extension) {
             $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
         }
 
