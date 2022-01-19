@@ -14,7 +14,7 @@
         "symfony/filesystem": "^5.2",
         "symfony/mime": "^5.1",
         "symfony/process": "^5.2",
-        "twig/twig": "^2.4 || ^3.0",
+        "twig/twig": "^2.4.4 || ^3.0",
         "intervention/image": "^2.7",
         "symfony/string": "^5.3"
     },
