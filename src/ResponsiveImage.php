@@ -302,9 +302,9 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Set srcset scaler.
+     * Set widths
      */
-    public function srcset(): ResponsiveImage
+    public function widths(): ResponsiveImage
     {
         $args = \func_get_args();
         $argsCount = \count($args);
@@ -346,20 +346,20 @@ class ResponsiveImage extends Image
         if (!\is_array($manipulations)) {
             parent::manipulate($manipulations);
         }
-        if (isset($manipulations['srcset'])) {
+        if (isset($manipulations['widths'])) {
             $args = [];
             // range scaler
-            if (!empty($manipulations['srcset']['min']) && !empty($manipulations['srcset']['max'])) {
-                $args = \array_values($manipulations['srcset']);
+            if (!empty($manipulations['widths']['min']) && !empty($manipulations['widths']['max'])) {
+                $args = \array_values($manipulations['widths']);
             // sizes scaler
-            } elseif (\is_array($manipulations['srcset'])) {
-                $args = [$manipulations['srcset']];
+            } elseif (\is_array($manipulations['widths'])) {
+                $args = [$manipulations['widths']];
             }
-            \call_user_func_array([$this, 'srcset'], $args);
+            \call_user_func_array([$this, 'widths'], $args);
         }
 
         // Remove unknown manipulations
-        unset($manipulations['srcset']);
+        unset($manipulations['widths']);
 
         if (\is_array($manipulations)) {
             $manipulations = new Manipulations([$manipulations]);

@@ -177,7 +177,7 @@ class ResponsiveImageTest extends TestCase
     {
         $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
 
-        $image->srcset([100, 200, 300, 400]);
+        $image->widths([100, 200, 300, 400]);
         $targets = $image->getSrcSetSources();
 
         foreach ($targets as $target) {
@@ -191,7 +191,7 @@ class ResponsiveImageTest extends TestCase
     {
         $image = $this->getFactory(['batch' => 0])->create('10/image.jpg');
 
-        $image->srcset([100, 200, 300, 400]);
+        $image->widths([100, 200, 300, 400]);
         $targets = $image->getSrcSetSources();
 
         foreach ($targets as $target) {
@@ -204,7 +204,7 @@ class ResponsiveImageTest extends TestCase
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
 
-        $image->srcset([100, 200, 300, 400, 500]);
+        $image->widths([100, 200, 300, 400, 500]);
         $targets = $image->getSrcSetSources();
 
         // First batch
@@ -233,7 +233,7 @@ class ResponsiveImageTest extends TestCase
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
 
-        $image->srcset([100, 200, 300, 400, 500]);
+        $image->widths([100, 200, 300, 400, 500]);
         $targets = $image->getSrcSetSources();
         \reset($targets);
         $this->assertEquals(\key($targets), '500');
@@ -244,7 +244,7 @@ class ResponsiveImageTest extends TestCase
     {
         $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
         $image->format('avif');
-        $image->srcset([200, 300, 400]);
+        $image->widths([200, 300, 400]);
 
         $targets = $image->getSrcSetSources();
         foreach ($targets as $target) {
