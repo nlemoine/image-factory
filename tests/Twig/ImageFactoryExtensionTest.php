@@ -3,19 +3,19 @@
 namespace HelloNico\ImageFactory\Test\Twig;
 
 use HelloNico\ImageFactory\ResponsiveImage;
-use HelloNico\ImageFactory\Twig\ImageFactoryExtension;
+use HelloNico\ImageFactory\Twig\ImageFactoryRuntime;
 use HelloNico\ImageFactory\Test\TestCase;
 
 /**
  * @internal
  * @coversNothing
  */
-class ImageFactoryExtensionTest extends TestCase
+class ImageFactoryRuntimeTest extends TestCase
 {
     /** @test */
     public function itCanChainManipulations()
     {
-        $extension = new ImageFactoryExtension($this->getFactory());
+        $extension = new ImageFactoryRuntime($this->getFactory());
         $image = $extension->width($this->getTestJpg(), [200])->blur(40);
 
         $this->assertInstanceOf(ResponsiveImage::class, $image);
@@ -24,7 +24,7 @@ class ImageFactoryExtensionTest extends TestCase
     /** @test */
     public function itRewritesManipulationsMethods()
     {
-        $extension = new ImageFactoryExtension($this->getFactory());
+        $extension = new ImageFactoryRuntime($this->getFactory());
         $image = $extension->device_pixel_ratio($this->getTestJpg(), [2]);
         $this->assertTrue($image->getManipulationSequence()->contains('devicePixelRatio'));
 
@@ -58,7 +58,7 @@ class ImageFactoryExtensionTest extends TestCase
     {
         $this->expectException(\BadMethodCallException::class);
 
-        $extension = new ImageFactoryExtension($this->getFactory());
+        $extension = new ImageFactoryRuntime($this->getFactory());
         $extension->src('file');
     }
 }
