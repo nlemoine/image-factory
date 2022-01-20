@@ -52,7 +52,7 @@ class ImageFactoryExtension extends AbstractExtension
             $filters[] = new TwigFilter(
                 $manipulation,
                 [ImageFactoryRuntime::class, $manipulation],
-                $manipulation !== 'manipulate' ? ['is_variadic' => true] : []
+                'manipulate' !== $manipulation ? ['is_variadic' => true] : []
             );
         }
 

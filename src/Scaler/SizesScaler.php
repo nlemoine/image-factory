@@ -4,10 +4,9 @@ namespace HelloNico\ImageFactory\Scaler;
 
 class SizesScaler extends AbstractScaler
 {
-    /**
-     * @var array
-     */
-    private $sizes = [];
+    public const NAME = 'sizes';
+
+    private array $sizes = [];
 
     /**
      * Set sizes.

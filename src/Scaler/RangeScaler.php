@@ -4,6 +4,8 @@ namespace HelloNico\ImageFactory\Scaler;
 
 class RangeScaler extends AbstractScaler
 {
+    public const NAME = 'range';
+
     /**
      * {@inheritDoc}
      */

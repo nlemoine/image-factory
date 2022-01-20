@@ -2,6 +2,7 @@
 
 namespace HelloNico\ImageFactory;
 
+use HelloNico\ImageFactory\Scaler\SizesScaler;
 use Spatie\ImageOptimizer\OptimizerChain;
 
 class Factory
@@ -37,10 +38,10 @@ class Factory
             $this->getPublicPath()
         );
         $image->setRebase($this->getRebase());
-        $image->setMinWidth($this->getMinWidth());
-        $image->setMaxWidth($this->getMaxWidth());
-        $image->setStep($this->getStep());
-        $image->setSizes($this->getSizes());
+        $image->setScalerMinWidth($this->getScalerMinWidth());
+        $image->setScalerMaxWidth($this->getScalerMaxWidth());
+        $image->setScalerStep($this->getScalerStep());
+        $image->setScalerSizes($this->getScalerSizes());
         $image->setScaler($this->getScaler());
         $image->setBaseUrl($this->getBaseUrl());
         $image->setOptimize($this->getOptimize());
@@ -185,39 +186,39 @@ class Factory
      */
     public function getScaler(): string
     {
-        return $this->config['scaler'] ?? 'range';
+        return $this->config['scaler'] ?? SizesScaler::NAME;
     }
 
     /**
      * Get min width.
      */
-    public function getMinWidth(): int
+    public function getScalerMinWidth(): int
     {
-        return $this->config['minWidth'] ?? 300;
+        return $this->config['scalerMinWidth'] ?? 300;
     }
 
     /**
      * Get max width.
      */
-    public function getMaxWidth(): int
+    public function getScalerMaxWidth(): int
     {
-        return $this->config['maxWidth'] ?? 1000;
+        return $this->config['scalerMaxWidth'] ?? 1000;
     }
 
     /**
      * Get step modifier.
      */
-    public function getStep(): int
+    public function getScalerStep(): int
     {
-        return $this->config['step'] ?? 100;
+        return $this->config['scalerStep'] ?? 100;
     }
 
     /**
      * Get sizes.
      */
-    public function getSizes(): array
+    public function getScalerSizes(): array
     {
-        return $this->config['sizes'] ?? [300, 768, 1024, 1200];
+        return $this->config['scalerSizes'] ?? [300, 768, 1024, 1200];
     }
 
     /**

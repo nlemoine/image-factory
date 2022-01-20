@@ -9,6 +9,7 @@ use loophp\phposinfo\Enum\FamilyName;
 use loophp\phposinfo\OsInfo;
 use Spatie\Image\Exceptions\InvalidManipulation;
 use Spatie\Image\Image;
+use Spatie\Image\Manipulations as SpatieManipulations;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -18,87 +19,63 @@ class ResponsiveImage extends Image
 {
     /**
      * Relative image path.
-     *
-     * @var string
      */
-    private $relativeImagePath;
+    private string $relativeImagePath;
 
     /**
      * Filesystem.
-     *
-     * @var Filesystem
      */
-    private $filesystem;
+    private Filesystem $filesystem;
 
     /**
      * Source path.
-     *
-     * @var string
      */
-    private $sourcePath;
+    private string $sourcePath;
 
     /**
      * Cache path.
-     *
-     * @var string
      */
-    private $cachePath;
+    private string $cachePath;
 
     /**
      * Public path.
-     *
-     * @var string
      */
-    private $publicPath;
+    private string $publicPath;
 
     /**
      * Base URL.
-     *
-     * @var string|null
      */
-    private $baseUrl;
+    private ?string $baseUrl;
 
     /**
      * Rebase.
-     *
-     * @var bool
      */
-    private $rebase;
+    private bool $rebase;
 
     /**
      * Max memory limit.
-     *
-     * @var string|null
      */
-    private $maxMemoryLimit;
+    private ?string $maxMemoryLimit;
 
     /**
      * Max execution time.
-     *
-     * @var int
      */
-    private $maxExecutionTime;
+    private int $maxExecutionTime;
 
     /**
      * Optimize.
-     *
-     * @var bool
      */
-    private $optimize;
+    private bool $optimize;
 
     /**
      * Optimization options.
-     *
-     * @var array
      */
-    private $optimizationOptions;
+    private array $optimizationOptions;
 
     /**
      * Has srcset.
-     *
-     * @var bool
      */
-    private $hasSrcset = false;
+    private bool $hasSrcset = false;
 
     /**
      * Scaler.
@@ -109,38 +86,28 @@ class ResponsiveImage extends Image
 
     /**
      * Max width.
-     *
-     * @var int
      */
-    private $minWidth;
+    private int $scalerMinWidth;
 
     /**
      * Max width.
-     *
-     * @var int
      */
-    private $maxWidth;
+    private int $scalerMaxWidth;
 
     /**
      * Step.
-     *
-     * @var int
      */
-    private $step;
+    private int $scalerStep;
 
     /**
      * Sizes.
-     *
-     * @var array
      */
-    private $sizes = [];
+    private array $scalerSizes = [];
 
     /**
      * Batch.
-     *
-     * @var int
      */
-    private $batch = 3;
+    private int $batch = 3;
 
     /**
      * Filename format.
@@ -164,7 +131,7 @@ class ResponsiveImage extends Image
         $this->relativeImagePath = $this->resolveRelativeImagePath();
     }
 
-    public function getManipulations(): Manipulations
+    public function getManipulations(): SpatieManipulations
     {
         return $this->manipulations;
     }
@@ -302,7 +269,7 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Set widths
+     * Set widths.
      */
     public function widths(): ResponsiveImage
     {
@@ -312,7 +279,7 @@ class ResponsiveImage extends Image
 
         // Sizes scaler
         if (1 === $argsCount && \is_array($args[0])) {
-            $this->setSizes($args[0]);
+            $this->setScalerSizes($args[0]);
             $this->setScaler('sizes');
         }
 
@@ -325,10 +292,10 @@ class ResponsiveImage extends Image
                 throw new \InvalidArgumentException(\sprintf('min width (%d) must be greater than max width (%d)', $minWidth, $maxWidth));
             }
 
-            $this->setMinWidth($minWidth);
-            $this->setMaxWidth($maxWidth);
+            $this->setScalerMinWidth($minWidth);
+            $this->setScalerMaxWidth($maxWidth);
             if (!empty($args[2])) {
-                $this->setStep($args[2]);
+                $this->setScalerStep($args[2]);
             }
             $this->setScaler('range');
         }
@@ -560,17 +527,17 @@ class ResponsiveImage extends Image
     public function setScaler(string $scaler): ResponsiveImage
     {
         switch ($scaler) {
-            case 'range':
+            case RangeScaler::NAME:
                 $scaler = new RangeScaler();
-                $scaler->setMinWidth($this->getMinWidth());
-                $scaler->setMaxWidth($this->getMaxWidth());
-                $scaler->setStep($this->getStep());
+                $scaler->setMinWidth($this->getScalerMinWidth());
+                $scaler->setMaxWidth($this->getScalerMaxWidth());
+                $scaler->setStep($this->getScalerStep());
 
                 break;
 
-            case 'sizes':
+            case SizesScaler::NAME:
                 $scaler = new SizesScaler();
-                $scaler->setSizes($this->getSizes());
+                $scaler->setSizes($this->getScalerSizes());
 
                 break;
         }
@@ -593,9 +560,9 @@ class ResponsiveImage extends Image
     /**
      * Set min width.
      */
-    public function setMinWidth(int $minWidth): ResponsiveImage
+    public function setScalerMinWidth(int $scalerMinWidth): ResponsiveImage
     {
-        $this->minWidth = $minWidth;
+        $this->scalerMinWidth = $scalerMinWidth;
 
         return $this;
     }
@@ -603,17 +570,17 @@ class ResponsiveImage extends Image
     /**
      * Get min width.
      */
-    public function getMinWidth(): int
+    public function getScalerMinWidth(): int
     {
-        return $this->minWidth;
+        return $this->scalerMinWidth;
     }
 
     /**
      * Set max width.
      */
-    public function setMaxWidth(int $maxWidth): ResponsiveImage
+    public function setScalerMaxWidth(int $scalerMaxWidth): ResponsiveImage
     {
-        $this->maxWidth = $maxWidth;
+        $this->scalerMaxWidth = $scalerMaxWidth;
 
         return $this;
     }
@@ -621,17 +588,17 @@ class ResponsiveImage extends Image
     /**
      * Get max width.
      */
-    public function getMaxWidth(): int
+    public function getScalerMaxWidth(): int
     {
-        return $this->maxWidth;
+        return $this->scalerMaxWidth;
     }
 
     /**
      * Set step.
      */
-    public function setStep(int $step): ResponsiveImage
+    public function setScalerStep(int $scalerStep): ResponsiveImage
     {
-        $this->step = $step;
+        $this->scalerStep = $scalerStep;
 
         return $this;
     }
@@ -639,17 +606,17 @@ class ResponsiveImage extends Image
     /**
      * Get step.
      */
-    public function getStep(): int
+    public function getScalerStep(): int
     {
-        return $this->step;
+        return $this->scalerStep;
     }
 
     /**
      * Set sizes.
      */
-    public function setSizes(array $sizes): ResponsiveImage
+    public function setScalerSizes(array $scalerSizes): ResponsiveImage
     {
-        $this->sizes = $sizes;
+        $this->scalerSizes = $scalerSizes;
 
         return $this;
     }
@@ -657,9 +624,9 @@ class ResponsiveImage extends Image
     /**
      * Get sizes.
      */
-    public function getSizes(): array
+    public function getScalerSizes(): array
     {
-        return $this->sizes;
+        return $this->scalerSizes;
     }
 
     /**
@@ -1107,7 +1074,7 @@ class ResponsiveImage extends Image
 
         // Width and height are fixed
         if ($this->aspectRatioWillChange()) {
-            return $manipulatedWidth / $manipulatedHeight;
+            return (int) $manipulatedWidth / (int) $manipulatedHeight;
         }
 
         // Width and height are not fixed

@@ -4,25 +4,13 @@ namespace HelloNico\ImageFactory\Scaler;
 
 abstract class AbstractScaler implements ScalerInterface
 {
-    /**
-     * @var int
-     */
-    protected $minWidth;
+    protected int $minWidth;
 
-    /**
-     * @var int
-     */
-    protected $maxWidth;
+    protected int $maxWidth;
 
-    /**
-     * @var int
-     */
-    protected $step;
+    protected int $step;
 
-    /**
-     * @var bool
-     */
-    protected $includeSource;
+    protected bool $includeSource;
 
     /**
      * Set min width.
