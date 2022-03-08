@@ -201,6 +201,9 @@ class ResponsiveImage extends Image
     {
         if (!$this->getHasSrcset()) {
             $width = $this->manipulations->getManipulationArgument('width');
+            if(empty($width)) {
+                $width = $this->getWidth();
+            }
 
             return [
                 $width => $this->getSrc(),
