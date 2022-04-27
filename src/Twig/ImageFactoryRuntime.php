@@ -48,162 +48,162 @@ class ImageFactoryRuntime implements RuntimeExtensionInterface
         return $image;
     }
 
-    public function apply(string $source, array $args = []): ResponsiveImage
+    public function apply(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function background(string $source, array $args = []): ResponsiveImage
+    public function background(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function blur(string $source, array $args = []): ResponsiveImage
+    public function blur(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function border(string $source, array $args = []): ResponsiveImage
+    public function border(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function brightness(string $source, array $args = []): ResponsiveImage
+    public function brightness(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function contrast(string $source, array $args = []): ResponsiveImage
+    public function contrast(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function crop(string $source, array $args = []): ResponsiveImage
+    public function crop(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function device_pixel_ratio(string $source, array $args = []): ResponsiveImage
+    public function device_pixel_ratio(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function fit(string $source, array $args = []): ResponsiveImage
+    public function fit(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function flip(string $source, array $args = []): ResponsiveImage
+    public function flip(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function focal_crop(string $source, array $args = []): ResponsiveImage
+    public function focal_crop(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function gamma(string $source, array $args = []): ResponsiveImage
+    public function gamma(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function greyscale(string $source, array $args = []): ResponsiveImage
+    public function greyscale(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function height(string $source, array $args = []): ResponsiveImage
+    public function height(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function manipulate(string $source, array $args = []): ResponsiveImage
+    public function manipulate(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function manual_crop(string $source, array $args = []): ResponsiveImage
+    public function manual_crop(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function optimize(string $source, array $args = []): ResponsiveImage
+    public function optimize(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function orientation(string $source, array $args = []): ResponsiveImage
+    public function orientation(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function pixelate(string $source, array $args = []): ResponsiveImage
+    public function pixelate(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function quality(string $source, array $args = []): ResponsiveImage
+    public function quality(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function sepia(string $source, array $args = []): ResponsiveImage
+    public function sepia(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function sharpen(string $source, array $args = []): ResponsiveImage
+    public function sharpen(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function to(string $source, array $args = []): ResponsiveImage
+    public function to(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark(string $source, array $args = []): ResponsiveImage
+    public function watermark(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_fit(string $source, array $args = []): ResponsiveImage
+    public function watermark_fit(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_height(string $source, array $args = []): ResponsiveImage
+    public function watermark_height(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_opacity(string $source, array $args = []): ResponsiveImage
+    public function watermark_opacity(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_padding(string $source, array $args = []): ResponsiveImage
+    public function watermark_padding(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_position(string $source, array $args = []): ResponsiveImage
+    public function watermark_position(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function watermark_width(string $source, array $args = []): ResponsiveImage
+    public function watermark_width(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function width(string $source, array $args = []): ResponsiveImage
+    public function width(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
 
-    public function widths(string $source, array $args = []): ResponsiveImage
+    public function widths(): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }
