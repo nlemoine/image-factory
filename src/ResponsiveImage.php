@@ -1122,6 +1122,13 @@ class ResponsiveImage extends Image
     }
 
     /**
+     * Get source extension.
+     */
+    public function getExtension(): string {
+        return \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+    }
+
+    /**
      * Creates a data URI (RFC 2397).
      *
      * @return string The generated data URI
