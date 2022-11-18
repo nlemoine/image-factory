@@ -45,12 +45,12 @@ class ResponsiveImage extends Image
     /**
      * Base URL.
      */
-    private ?string $baseUrl;
+    private ?string $baseUrl = null;
 
     /**
      * Rebase.
      */
-    private bool $rebase;
+    private bool $rebase = false;
 
     /**
      * Max memory limit.
@@ -152,6 +152,11 @@ class ResponsiveImage extends Image
         return $this->getBase64($this->getSrcPath());
     }
 
+    public function getImageUrl(): string
+    {
+        return $this->resolveUrl($this->pathToImage);
+    }
+
     /**
      * Get src.
      *
@@ -159,6 +164,10 @@ class ResponsiveImage extends Image
      */
     public function getSrc(): string
     {
+        if ($this->getExtension() === 'svg') {
+            return $this->resolveUrl($this->pathToImage);
+        }
+
         // Return URL
         return $this->resolveUrl($this->getSrcPath());
     }
@@ -181,6 +190,10 @@ class ResponsiveImage extends Image
      */
     public function getSrcset(): ?string
     {
+        if ($this->getExtension() === 'svg') {
+            return $this->resolveUrl($this->pathToImage);
+        }
+
         $srcset = $this->getSrcsetSources();
 
         if (empty($srcset)) {
@@ -1025,7 +1038,7 @@ class ResponsiveImage extends Image
     {
         $imageRelativeUrl = \str_replace($this->getPublicPath(), '', $imageCachePath);
 
-        return $this->getBaseUrl() ? $this->getBaseUrl().$imageRelativeUrl : $imageRelativeUrl;
+        return $this->baseUrl ? $this->baseUrl.$imageRelativeUrl : $imageRelativeUrl;
     }
 
     /**
