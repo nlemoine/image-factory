@@ -324,7 +324,7 @@ class ResponsiveImage extends Image
      *
      * @param array|callable|Manipulations $manipulations
      */
-    public function manipulate($manipulations): ResponsiveImage
+    public function manipulate($manipulations): static
     {
         if (!\is_array($manipulations)) {
             parent::manipulate($manipulations);
@@ -399,7 +399,8 @@ class ResponsiveImage extends Image
 
         // Create manipulated image
         try {
-            return $this->save($imageCachePath);
+            $this->save($imageCachePath);
+            return $imageCachePath;
         } catch (\Exception $e) {
             return $e->getMessage();
         }
@@ -748,20 +749,20 @@ class ResponsiveImage extends Image
      *
      * @return string
      */
-    public function save($imageCachePath = '')
+    public function save(string $imageCachePath = ''): void
     {
         // Are we dealing with AVIF?
         if (Manipulations::FORMAT_AVIF !== $this->manipulations->getFirstManipulationArgument('format')) {
             parent::save($imageCachePath);
 
-            return $imageCachePath;
+            return;
         }
 
         // Is AVIF supported natively?
         if ($this->isAvifSupported()) {
             parent::save($imageCachePath);
 
-            return $imageCachePath;
+            return;
         }
 
         // AVIF will be converted with cavif
@@ -800,13 +801,13 @@ class ResponsiveImage extends Image
         try {
             $process->mustRun();
         } catch (ProcessFailedException $exception) {
-            return $exception->getMessage();
+            $exception->getMessage();
         }
 
         // Delete source image
         @\unlink($imageCachePath);
 
-        return $imageCachePathAvif;
+        return;
     }
 
     /**
