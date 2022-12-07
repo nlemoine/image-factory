@@ -9,14 +9,14 @@
     ],
     "require": {
         "php": "^7.4 || ^8.0",
+        "intervention/image": "^2.7",
         "loophp/phposinfo": "^1.7",
         "spatie/image": "1.10.3",
         "symfony/filesystem": "^5.4 || ^6.0",
         "symfony/mime": "^5.4 || ^6.0",
         "symfony/process": "^5.4 || ^6.0",
-        "twig/twig": "^2.4.4 || ^3.0",
-        "intervention/image": "^2.7",
-        "symfony/string": "^5.4 || ^6.0"
+        "symfony/string": "^5.4 || ^6.0",
+        "twig/twig": "^2.4.4 || ^3.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.0",
