@@ -8,15 +8,15 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
+        "php": "^7.4 || ^8.0",
         "loophp/phposinfo": "^1.7",
         "spatie/image": "1.10.3",
-        "symfony/filesystem": "^5.2",
-        "symfony/mime": "^5.1",
-        "symfony/process": "^5.2",
+        "symfony/filesystem": "^5.4 || ^6.0",
+        "symfony/mime": "^5.4 || ^6.0",
+        "symfony/process": "^5.4 || ^6.0",
         "twig/twig": "^2.4.4 || ^3.0",
         "intervention/image": "^2.7",
-        "symfony/string": "^5.3"
+        "symfony/string": "^5.4 || ^6.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.0",
