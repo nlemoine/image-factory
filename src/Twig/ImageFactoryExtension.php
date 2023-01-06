@@ -29,6 +29,7 @@ class ImageFactoryExtension extends AbstractExtension
         'pixelate',
         'quality',
         'sepia',
+        'dithering',
         'sharpen',
         'to',
         'watermark',
@@ -42,9 +43,7 @@ class ImageFactoryExtension extends AbstractExtension
         'widths',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
+
     public function getFilters(): array
     {
         $filters = [];
@@ -52,7 +51,9 @@ class ImageFactoryExtension extends AbstractExtension
             $filters[] = new TwigFilter(
                 $manipulation,
                 [ImageFactoryRuntime::class, $manipulation],
-                'manipulate' !== $manipulation ? ['is_variadic' => true] : []
+                $manipulation !== 'manipulate' ? [
+                    'is_variadic' => true,
+                ] : []
             );
         }
 

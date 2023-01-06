@@ -11,16 +11,14 @@ class SizesScaler extends AbstractScaler
     /**
      * Set sizes.
      */
-    public function setSizes(array $sizes): SizesScaler
+    public function setSizes(array $sizes): self
     {
         $this->sizes = $sizes;
 
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+
     public function scale(): array
     {
         return $this->sizes;

@@ -39,7 +39,7 @@ class ImageFactoryRuntime implements RuntimeExtensionInterface
 
         $args = isset($arguments[1]) ? $arguments[1] : [];
 
-        if ('manipulate' === $name) {
+        if ($name === 'manipulate') {
             $image->manipulate($args);
         } else {
             $image->{(string) u($name)->camel()}(...$args);

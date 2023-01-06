@@ -131,17 +131,17 @@ class ResponsiveImage extends Image
         $this->relativeImagePath = $this->resolveRelativeImagePath();
     }
 
-    public function getManipulations(): SpatieManipulations
-    {
-        return $this->manipulations;
-    }
-
     /**
      * To string.
      */
     public function __toString(): string
     {
         return (string) $this->getSrc();
+    }
+
+    public function getManipulations(): SpatieManipulations
+    {
+        return $this->manipulations;
     }
 
     /**
@@ -287,20 +287,20 @@ class ResponsiveImage extends Image
     /**
      * Set widths.
      */
-    public function widths(): ResponsiveImage
+    public function widths(): self
     {
         $args = \func_get_args();
         $argsCount = \count($args);
         $this->setHasSrcset(true);
 
         // Sizes scaler
-        if (1 === $argsCount && \is_array($args[0])) {
+        if ($argsCount === 1 && \is_array($args[0])) {
             $this->setScalerSizes($args[0]);
             $this->setScaler('sizes');
         }
 
         // Range scaler
-        if (2 === $argsCount || 3 === $argsCount) {
+        if ($argsCount === 2 || $argsCount === 3) {
             $minWidth = $args[0];
             $maxWidth = $args[1];
 
@@ -373,9 +373,9 @@ class ResponsiveImage extends Image
         $maxMemoryLimit = $this->getMaxMemoryLimit();
         if (
             $maxMemoryLimit
-            && -1 !== \intval($memoryLimit)
+            && \intval($memoryLimit) !== -1
             && (
-                (false === $memoryLimit || '' === $memoryLimit)
+                ($memoryLimit === false || $memoryLimit === '')
                 || ($this->parseByteSize($memoryLimit) < $this->parseByteSize($maxMemoryLimit))
             )
         ) {
@@ -385,7 +385,7 @@ class ResponsiveImage extends Image
         // Increase max_execution_time
         $max_execution_time = \ini_get('max_execution_time');
         if (
-            (false === $max_execution_time || '' === $max_execution_time)
+            ($max_execution_time === false || $max_execution_time === '')
             || (\intval($max_execution_time) > 0 && \intval($max_execution_time) < $this->getMaxExecutionTime())
         ) {
             \ini_set('max_execution_time', (string) $this->getMaxExecutionTime());
@@ -409,7 +409,7 @@ class ResponsiveImage extends Image
     /**
      * Set source path.
      */
-    public function setSourcePath(string $sourcePath): ResponsiveImage
+    public function setSourcePath(string $sourcePath): self
     {
         $this->sourcePath = \rtrim($sourcePath, '/');
 
@@ -427,7 +427,7 @@ class ResponsiveImage extends Image
     /**
      * Set cache path.
      */
-    public function setCachePath(string $cachePath): ResponsiveImage
+    public function setCachePath(string $cachePath): self
     {
         $this->cachePath = \rtrim($cachePath, '/');
 
@@ -445,7 +445,7 @@ class ResponsiveImage extends Image
     /**
      * Set public path.
      */
-    public function setPublicPath(string $publicPath): ResponsiveImage
+    public function setPublicPath(string $publicPath): self
     {
         $this->publicPath = \rtrim($publicPath, '/');
 
@@ -463,7 +463,7 @@ class ResponsiveImage extends Image
     /**
      * Set rebase.
      */
-    public function setRebase(bool $rebase): ResponsiveImage
+    public function setRebase(bool $rebase): self
     {
         $this->rebase = $rebase;
 
@@ -481,7 +481,7 @@ class ResponsiveImage extends Image
     /**
      * Set optimize.
      */
-    public function setOptimize(bool $optimize): ResponsiveImage
+    public function setOptimize(bool $optimize): self
     {
         $this->optimize = $optimize;
 
@@ -521,7 +521,7 @@ class ResponsiveImage extends Image
     /**
      * Set base URL.
      */
-    public function setBaseUrl(?string $baseUrl): ResponsiveImage
+    public function setBaseUrl(?string $baseUrl): self
     {
         $this->baseUrl = \is_string($baseUrl) ? \rtrim($baseUrl, '/') : $baseUrl;
 
@@ -541,7 +541,7 @@ class ResponsiveImage extends Image
     /**
      * Set scaler.
      */
-    public function setScaler(string $scaler): ResponsiveImage
+    public function setScaler(string $scaler): self
     {
         switch ($scaler) {
             case RangeScaler::NAME:
@@ -577,7 +577,7 @@ class ResponsiveImage extends Image
     /**
      * Set min width.
      */
-    public function setScalerMinWidth(int $scalerMinWidth): ResponsiveImage
+    public function setScalerMinWidth(int $scalerMinWidth): self
     {
         $this->scalerMinWidth = $scalerMinWidth;
 
@@ -595,7 +595,7 @@ class ResponsiveImage extends Image
     /**
      * Set max width.
      */
-    public function setScalerMaxWidth(int $scalerMaxWidth): ResponsiveImage
+    public function setScalerMaxWidth(int $scalerMaxWidth): self
     {
         $this->scalerMaxWidth = $scalerMaxWidth;
 
@@ -613,7 +613,7 @@ class ResponsiveImage extends Image
     /**
      * Set step.
      */
-    public function setScalerStep(int $scalerStep): ResponsiveImage
+    public function setScalerStep(int $scalerStep): self
     {
         $this->scalerStep = $scalerStep;
 
@@ -631,7 +631,7 @@ class ResponsiveImage extends Image
     /**
      * Set sizes.
      */
-    public function setScalerSizes(array $scalerSizes): ResponsiveImage
+    public function setScalerSizes(array $scalerSizes): self
     {
         $this->scalerSizes = $scalerSizes;
 
@@ -651,7 +651,7 @@ class ResponsiveImage extends Image
      *
      * @param string $limit
      */
-    public function setMaxMemoryLimit(?string $limit): ResponsiveImage
+    public function setMaxMemoryLimit(?string $limit): self
     {
         $this->maxMemoryLimit = $limit;
 
@@ -669,7 +669,7 @@ class ResponsiveImage extends Image
     /**
      * Set max execution time.
      */
-    public function setMaxExecutionTime(int $maxExecutionTime): ResponsiveImage
+    public function setMaxExecutionTime(int $maxExecutionTime): self
     {
         $this->maxExecutionTime = $maxExecutionTime;
 
@@ -689,7 +689,7 @@ class ResponsiveImage extends Image
     /**
      * Set has srcset.
      */
-    public function setHasSrcset(bool $bool): ResponsiveImage
+    public function setHasSrcset(bool $bool): self
     {
         $this->hasSrcset = $bool;
 
@@ -707,7 +707,7 @@ class ResponsiveImage extends Image
     /**
      * Set batch.
      */
-    public function setBatch(int $batch): ResponsiveImage
+    public function setBatch(int $batch): self
     {
         $this->batch = $batch;
 
@@ -727,7 +727,7 @@ class ResponsiveImage extends Image
      *
      * @param callable|string|null $filenameFormat
      */
-    public function setFilenameFormat($filenameFormat): ResponsiveImage
+    public function setFilenameFormat($filenameFormat): self
     {
         $this->filenameFormat = $filenameFormat;
 
@@ -745,14 +745,15 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @return string
      */
     public function save(string $imageCachePath = ''): void
     {
+        $hasCustomFilter = $this->manipulations->getFirstManipulationArgument('filter') === Manipulations::FILTER_DITHERING;
+        $isAvif = $this->manipulations->getFirstManipulationArgument('format') !== Manipulations::FORMAT_AVIF;
+
         // Are we dealing with AVIF?
-        if (Manipulations::FORMAT_AVIF !== $this->manipulations->getFirstManipulationArgument('format')) {
+        if (!$isAvif && !$hasCustomFilter) {
             parent::save($imageCachePath);
 
             return;
@@ -760,8 +761,11 @@ class ResponsiveImage extends Image
 
         // Is AVIF supported natively?
         if ($this->isAvifSupported()) {
-            parent::save($imageCachePath);
-
+            if ($hasCustomFilter) {
+                $this->saveWithCustomFilter($imageCachePath);
+            } else {
+                parent::save($imageCachePath);
+            }
             return;
         }
 
@@ -771,20 +775,24 @@ class ResponsiveImage extends Image
         $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
 
         // cavif can't convert gif to avif
-        if (Manipulations::FORMAT_GIF === $sourceExtension) {
+        if ($sourceExtension === Manipulations::FORMAT_GIF) {
             // Convert to PNG first
             $sourceExtension = Manipulations::FORMAT_PNG;
         }
-        $imageCachePath .= '.'.$sourceExtension;
+        $imageCachePath .= '.' . $sourceExtension;
 
         // Save manipulated image with the original format
-        parent::save($imageCachePath);
+        if ($hasCustomFilter) {
+            $this->saveWithCustomFilter($imageCachePath);
+        } else {
+            parent::save($imageCachePath);
+        }
 
         // Add avif format again, so srcset keeps the avif format
         $this->to(Manipulations::FORMAT_AVIF);
 
         // Convert to avif with the binary
-        $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME).'/'.\pathinfo($imageCachePath, PATHINFO_FILENAME);
+        $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
         // Settings from https://www.industrialempathy.com/posts/avif-webp-quality-settings/
         $args = [
             $this->getAvifBinaryPath(),
@@ -810,26 +818,38 @@ class ResponsiveImage extends Image
         return;
     }
 
-    /**
-     * Check for native AVIF support.
-     */
-    protected function isAvifSupported(): bool
+    public function saveWithCustomFilter(string $outputPath = ''): void
     {
-        if ('gd' === $this->imageDriver) {
-            return \function_exists('imagecreatefromavif');
+        if ($outputPath === '') {
+            $outputPath = $this->pathToImage;
         }
-        // AVIF encoding does not work well in Imagick yet
-        // https://github.com/ImageMagick/ImageMagick/issues/1432
-        // } elseif($this->imageDriver === 'imagick') {
-        //     return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
-        // }
-        return false;
+
+        $this->addFormatManipulation($outputPath);
+
+        $glideConversion = GlideConversion::create($this->pathToImage);
+        $glideConversion->useImageDriver($this->imageDriver);
+
+        if ($this->temporaryDirectory !== null) {
+            $glideConversion->setTemporaryDirectory($this->temporaryDirectory);
+        }
+
+        $glideConversion->performManipulations($this->manipulations);
+
+        $glideConversion->save($outputPath);
+
+        if ($this->shouldOptimize()) {
+            $optimizerChainConfiguration = $this->manipulations->getFirstManipulationArgument('optimize');
+
+            $optimizerChainConfiguration = \json_decode($optimizerChainConfiguration, true);
+
+            $this->performOptimization($outputPath, $optimizerChainConfiguration);
+        }
     }
 
     /**
      * @throws InvalidManipulation
      */
-    public function crop(int $width, int $height, string $cropMethod = Manipulations::CROP_CENTER): ResponsiveImage
+    public function crop(int $width, int $height, string $cropMethod = Manipulations::CROP_CENTER): self
     {
         return parent::__call(__FUNCTION__, [$cropMethod, $width, $height]);
     }
@@ -837,7 +857,7 @@ class ResponsiveImage extends Image
     /**
      * @throws InvalidManipulation
      */
-    public function fit(int $width, int $height, string $fitMethod = Manipulations::FIT_FILL): ResponsiveImage
+    public function fit(int $width, int $height, string $fitMethod = Manipulations::FIT_FILL): self
     {
         return parent::__call(__FUNCTION__, [$fitMethod, $width, $height]);
     }
@@ -871,7 +891,7 @@ class ResponsiveImage extends Image
         } elseif (OsInfo::isFamily(FamilyName::DARWIN)) {
             \array_push($binaryPath, 'macos', $binaryName);
         } elseif (OsInfo::isFamily(FamilyName::WINDOWS)) {
-            \array_push($binaryPath, 'windows', $binaryName.'.exe');
+            \array_push($binaryPath, 'windows', $binaryName . '.exe');
         }
 
         $binaryPath = \implode(DIRECTORY_SEPARATOR, $binaryPath);
@@ -888,11 +908,86 @@ class ResponsiveImage extends Image
      *
      * Required for usage in Twig since Twig already has `format` filter
      */
-    public function to(string $format): ResponsiveImage
+    public function to(string $format): self
     {
         $this->format($format);
 
         return $this;
+    }
+
+    /**
+     * Determine if image aspect ratio will change given current manipulations.
+     */
+    public function aspectRatioWillChange(): bool
+    {
+        $originalWidth = $this->manipulations->getManipulationArgument('width');
+        $originalHeight = $this->manipulations->getManipulationArgument('height');
+        if (
+            (
+                $this->manipulations->hasManipulation('crop') // crop / focalCrop
+                || $this->manipulations->hasManipulation('manualCrop')
+                || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_FILL, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
+            )
+            && $originalWidth
+            && $originalHeight
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function getAspectRatio(): float
+    {
+        $manipulatedWidth = $this->manipulations->getManipulationArgument('width');
+        $manipulatedHeight = $this->manipulations->getManipulationArgument('height');
+
+        // Width and height are fixed
+        if ($this->aspectRatioWillChange()) {
+            return (int) $manipulatedWidth / (int) $manipulatedHeight;
+        }
+
+        // Width and height are not fixed
+        return $this->getWidth() / $this->getHeight();
+    }
+
+    /**
+     * Get target mime type.
+     */
+    public function getTargetMime(): string
+    {
+        $extension = $this->manipulations->getManipulationArgument('format');
+        if (!$extension) {
+            $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+        }
+
+        $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
+
+        return \sprintf('image/%s', $extension);
+    }
+
+    /**
+     * Get source extension.
+     */
+    public function getExtension(): string
+    {
+        return \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+    }
+
+    /**
+     * Check for native AVIF support.
+     */
+    protected function isAvifSupported(): bool
+    {
+        if ($this->imageDriver === 'gd') {
+            return \function_exists('imagecreatefromavif');
+        }
+        // AVIF encoding does not work well in Imagick yet
+        // https://github.com/ImageMagick/ImageMagick/issues/1432
+        // } elseif($this->imageDriver === 'imagick') {
+        //     return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
+        // }
+        return false;
     }
 
     /**
@@ -933,7 +1028,7 @@ class ResponsiveImage extends Image
         // Create a unique hash based on relative file path and manipulations
         // Important: use relative path to avoid hash changes when absolute folders change (e.g. different hosting/stage for example)
         // @todo if file is an absolute path, rebased -> conflict
-        $hash = \substr(\md5(\json_encode($manipulations).$relativeImagePath), 0, 8);
+        $hash = \substr(\md5(\json_encode($manipulations) . $relativeImagePath), 0, 8);
 
         $filename = \pathinfo($relativeImagePath, PATHINFO_FILENAME);
 
@@ -999,13 +1094,13 @@ class ResponsiveImage extends Image
     private function getImageCachePath(): string
     {
         $dirname = \pathinfo($this->relativeImagePath, PATHINFO_DIRNAME);
-        $dirname = '.' === $dirname ? '' : $dirname;
+        $dirname = $dirname === '.' ? '' : $dirname;
 
         if (!empty($dirname)) {
-            $dirname = $this->getRebase() ? '' : $dirname.'/';
+            $dirname = $this->getRebase() ? '' : $dirname . '/';
         }
 
-        return $this->getCachePath().'/'.$dirname.$this->getCacheFilename($this->relativeImagePath);
+        return $this->getCachePath() . '/' . $dirname . $this->getCacheFilename($this->relativeImagePath);
     }
 
     /**
@@ -1013,7 +1108,7 @@ class ResponsiveImage extends Image
      */
     private function resolveRelativeImagePath(): string
     {
-        if (false === \strpos($this->pathToImage, $this->getSourcePath())) {
+        if (\strpos($this->pathToImage, $this->getSourcePath()) === false) {
             return \pathinfo($this->pathToImage, PATHINFO_BASENAME);
         }
         // Image is in source path, make it relative
@@ -1029,7 +1124,7 @@ class ResponsiveImage extends Image
             return $imagePath;
         }
 
-        return $this->getSourcePath().'/'.$imagePath;
+        return $this->getSourcePath() . '/' . $imagePath;
     }
 
     /**
@@ -1039,7 +1134,7 @@ class ResponsiveImage extends Image
     {
         $imageRelativeUrl = \str_replace($this->getPublicPath(), '', $imageCachePath);
 
-        return $this->baseUrl ? $this->baseUrl.$imageRelativeUrl : $imageRelativeUrl;
+        return $this->baseUrl ? $this->baseUrl . $imageRelativeUrl : $imageRelativeUrl;
     }
 
     /**
@@ -1063,42 +1158,6 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Determine if image aspect ratio will change given current manipulations.
-     */
-    public function aspectRatioWillChange(): bool
-    {
-        $originalWidth = $this->manipulations->getManipulationArgument('width');
-        $originalHeight = $this->manipulations->getManipulationArgument('height');
-        if (
-            (
-                $this->manipulations->hasManipulation('crop') // crop / focalCrop
-                || $this->manipulations->hasManipulation('manualCrop')
-                || \in_array($this->manipulations->getManipulationArgument('fit'), [Manipulations::FIT_STRETCH, Manipulations::FIT_FILL, Manipulations::FIT_CROP, Manipulations::FIT_STRETCH], true)
-            )
-            && $originalWidth
-            && $originalHeight
-        ) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function getAspectRatio(): float
-    {
-        $manipulatedWidth = $this->manipulations->getManipulationArgument('width');
-        $manipulatedHeight = $this->manipulations->getManipulationArgument('height');
-
-        // Width and height are fixed
-        if ($this->aspectRatioWillChange()) {
-            return (int) $manipulatedWidth / (int) $manipulatedHeight;
-        }
-
-        // Width and height are not fixed
-        return $this->getWidth() / $this->getHeight();
-    }
-
-    /**
      * Get base64 encoded image datauri.
      *
      * @param string $path
@@ -1107,7 +1166,7 @@ class ResponsiveImage extends Image
     {
         try {
             $data = \file_get_contents($path);
-            if (false === $data) {
+            if ($data === false) {
                 throw new \Exception('Unable to get contents from file');
             }
         } catch (\Exception $e) {
@@ -1121,28 +1180,6 @@ class ResponsiveImage extends Image
     }
 
     /**
-     * Get target mime type.
-     */
-    public function getTargetMime(): string
-    {
-        $extension = $this->manipulations->getManipulationArgument('format');
-        if (!$extension) {
-            $extension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-        }
-
-        $extension = \str_replace('jpg', 'jpeg', \strtolower($extension));
-
-        return \sprintf('image/%s', $extension);
-    }
-
-    /**
-     * Get source extension.
-     */
-    public function getExtension(): string {
-        return \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-    }
-
-    /**
      * Creates a data URI (RFC 2397).
      *
      * @return string The generated data URI
@@ -1153,13 +1190,13 @@ class ResponsiveImage extends Image
         $repr .= $mime;
 
         foreach ($parameters as $key => $value) {
-            $repr .= ';'.$key.'='.\rawurlencode($value);
+            $repr .= ';' . $key . '=' . \rawurlencode($value);
         }
 
-        if (0 === \strpos($mime, 'text/')) {
-            $repr .= ','.\rawurlencode($data);
+        if (\strpos($mime, 'text/') === 0) {
+            $repr .= ',' . \rawurlencode($data);
         } else {
-            $repr .= ';base64,'.\base64_encode($data);
+            $repr .= ';base64,' . \base64_encode($data);
         }
 
         return $repr;
