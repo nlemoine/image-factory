@@ -9,11 +9,11 @@ interface ScalerInterface
      */
     public function scale(): array;
 
-    public function setMinWidth(int $minWidth): ScalerInterface;
+    public function setMinWidth(int $minWidth): self;
 
-    public function setMaxWidth(int $maxWidth): ScalerInterface;
+    public function setMaxWidth(int $maxWidth): self;
 
-    public function setStep(int $step): ScalerInterface;
+    public function setStep(int $step): self;
 
-    public function setIncludeSource(bool $includeSource): ScalerInterface;
+    public function setIncludeSource(bool $includeSource): self;
 }

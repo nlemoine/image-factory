@@ -6,9 +6,6 @@ class RangeScaler extends AbstractScaler
 {
     public const NAME = 'range';
 
-    /**
-     * {@inheritDoc}
-     */
     public function scale(): array
     {
         $sizes = [];
