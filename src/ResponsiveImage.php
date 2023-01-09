@@ -370,7 +370,7 @@ class ResponsiveImage extends Image
 
         // Cache image exists
         if ($this->filesystem->exists($imageCachePath)) {
-            // return $imageCachePath;
+            return $imageCachePath;
         }
 
         // Increase memory limit
@@ -757,6 +757,22 @@ class ResponsiveImage extends Image
 
         $this->addFormatManipulation($outputPath);
 
+        $isAvif = $this->manipulations->getFirstManipulationArgument('format') === Manipulations::FORMAT_AVIF;
+        $isAvifSupported = $this->isAvifSupported();
+
+        if ($isAvif && !$isAvifSupported) {
+            $this->manipulations->removeManipulation('format');
+            $this->manipulations->removeManipulation('optimize');
+            // AVIF will be converted with cavif
+            $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
+            // cavif can't convert gif to avif
+            if ($sourceExtension === Manipulations::FORMAT_GIF) {
+                // Convert to PNG first
+                $sourceExtension = Manipulations::FORMAT_PNG;
+            }
+            $outputPath .= '.' . $sourceExtension;
+        }
+
         $imageManager = new ImageManager([
             'driver' => $this->imageDriver,
         ]);
@@ -778,9 +794,7 @@ class ResponsiveImage extends Image
 
         $this->filesystem->dumpFile($outputPath, $imageData);
 
-        $isAvif = $this->manipulations->getFirstManipulationArgument('format') !== Manipulations::FORMAT_AVIF;
-
-        if ($this->shouldOptimize() && !$isAvif) {
+        if ($this->shouldOptimize()) {
             $optimizerChainConfiguration = $this->manipulations->getFirstManipulationArgument('optimize');
 
             $optimizerChainConfiguration = \json_decode($optimizerChainConfiguration, true);
@@ -788,20 +802,13 @@ class ResponsiveImage extends Image
             $this->performOptimization($outputPath, $optimizerChainConfiguration);
         }
 
-        if ($isAvif && $this->isAvifSupported()) {
+        if (!$isAvif) {
             return;
         }
 
-        // AVIF will be converted with cavif
-        $this->manipulations->removeManipulation('format');
-        $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
-
-        // cavif can't convert gif to avif
-        if ($sourceExtension === Manipulations::FORMAT_GIF) {
-            // Convert to PNG first
-            $sourceExtension = Manipulations::FORMAT_PNG;
+        if ($this->isAvifSupported()) {
+            return;
         }
-        $outputPath .= '.' . $sourceExtension;
 
         // Add avif format again, so srcset keeps the avif format
         $this->to(Manipulations::FORMAT_AVIF);
