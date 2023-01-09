@@ -769,6 +769,7 @@ class ResponsiveImage extends Image
             if ($sourceExtension === Manipulations::FORMAT_GIF) {
                 // Convert to PNG first
                 $sourceExtension = Manipulations::FORMAT_PNG;
+                $this->manipulations->format(Manipulations::FORMAT_PNG);
             }
             $outputPath .= '.' . $sourceExtension;
         }
