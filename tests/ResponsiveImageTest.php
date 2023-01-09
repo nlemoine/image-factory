@@ -10,7 +10,10 @@ use Spatie\Image\Manipulations;
  */
 class ResponsiveImageTest extends TestCase
 {
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanUseACallableCustomFilename()
     {
         $image = $this->getFactory([
@@ -24,7 +27,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals('title.jpg', \basename($target));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanUseAStringCustomFilename()
     {
         $image = $this->getFactory([
@@ -36,7 +42,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals('image-my-super-cool-seo-title.jpg', \basename($target));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itWillNormalizeFileExtension()
     {
         $image = $this->getFactory()->create('surfboards.JPEG');
@@ -45,7 +54,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals('jpg', \pathinfo($target, PATHINFO_EXTENSION));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanModifyAnImageUsingManipulations()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
@@ -58,7 +70,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(500, $size[0]);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanCropAnImageWithReorderedParameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
@@ -72,7 +87,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(200, $size[1]);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanFitAnImageWithReorderedParameters()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
@@ -83,7 +101,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertFileExists($target);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itDoesNotCareAboutManipulationsOrder()
     {
         $factory = $this->getFactory();
@@ -96,7 +117,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals($image->generateImage(), $image2->generateImage());
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itHandlesMultipleOptimizeCalls()
     {
         $factory = $this->getFactory();
@@ -109,7 +133,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals($image->generateImage(), $image2->generateImage());
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanGenerateDatauri()
     {
         $image = $this->getFactory()->create($this->getTestJpg());
@@ -120,7 +147,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertTrue(false !== \strpos($data, 'data:image/jpeg'));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanRebasePath()
     {
         $image = $this->getFactory(['rebase' => true])->create('10/image.jpg');
@@ -131,7 +161,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanHandleSpecialCharacters()
     {
         // @todo check again
@@ -142,7 +175,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertSame('é', \mb_substr(\pathinfo($target, PATHINFO_BASENAME), 0, 1));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanAddBaseUrl()
     {
         $image = $this->getFactory(['baseUrl' => 'https://example.com'])->create('image.jpg');
@@ -152,7 +188,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(\parse_url($url, PHP_URL_SCHEME).'://'.\parse_url($url, PHP_URL_HOST), 'https://example.com');
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanHandleAnAbsolutePath()
     {
         $image = $this->getFactory()->create(__DIR__.'/images/source/image.jpg');
@@ -162,7 +201,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanHandleAnAbsolutePathOutsideSource()
     {
         $image = $this->getFactory()->create(__DIR__.'/images/image.jpg');
@@ -172,7 +214,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals($image->getCachePath(), \pathinfo($target, PATHINFO_DIRNAME));
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanGenerateSrcset()
     {
         $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
@@ -186,7 +231,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(\count($targets), 4);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanGenerateSrcsetAndKeepFolders()
     {
         $image = $this->getFactory(['batch' => 0])->create('10/image.jpg');
@@ -199,7 +247,10 @@ class ResponsiveImageTest extends TestCase
         }
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanGenerateSrcsetByBatch()
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
@@ -228,7 +279,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(\count($targets), 5);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanGenerateSrcsetStartingByHighestWidth()
     {
         $image = $this->getFactory(['batch' => 2])->create($this->getTestJpg());
@@ -239,7 +293,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(\key($targets), '500');
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanConvertFromJpegToAvif()
     {
         $image = $this->getFactory(['batch' => 0])->create($this->getTestJpg());
@@ -253,7 +310,10 @@ class ResponsiveImageTest extends TestCase
         $this->assertEquals(\count($targets), 3);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
     public function itCanConvertFromPngToAvif()
     {
         $image = $this->getFactory()->create('github.png');
@@ -263,13 +323,24 @@ class ResponsiveImageTest extends TestCase
         $this->assertFileExists($target);
     }
 
-    /** @test */
-    public function itCanConvertFromGifToAvif()
+    /**
+     * @test
+     * @dataProvider dataDrivers
+     */
+    public function itCanConvertFromGifToAvif($driver)
     {
-        $image = $this->getFactory()->create('github.gif');
+        $image = $this->getFactory(['driver' => $driver])->create('github.gif');
         $image->format('avif');
 
         $target = $image->generateImage();
         $this->assertFileExists($target);
+    }
+
+    public function dataDrivers()
+    {
+        return [
+            'GD' => ['gd'],
+            'Imagick' => ['imagick'],
+        ];
     }
 }
