@@ -107,10 +107,6 @@ class ImageFactoryRuntime implements RuntimeExtensionInterface
     /**
      * @param string|ResponsiveImage $source
      */
-
-    /**
-     * @param string|ResponsiveImage $source
-     */
     public function device_pixel_ratio($source, array $args = []): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
@@ -204,6 +200,14 @@ class ImageFactoryRuntime implements RuntimeExtensionInterface
      * @param string|ResponsiveImage $source
      */
     public function pixelate($source, array $args = []): ResponsiveImage
+    {
+        return $this->__call(__FUNCTION__, \func_get_args());
+    }
+
+    /**
+     * @param string|ResponsiveImage $source
+     */
+    public function dither($source, array $args = []): ResponsiveImage
     {
         return $this->__call(__FUNCTION__, \func_get_args());
     }

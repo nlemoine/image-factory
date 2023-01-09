@@ -18,7 +18,6 @@ class SizesScaler extends AbstractScaler
         return $this;
     }
 
-
     public function scale(): array
     {
         return $this->sizes;

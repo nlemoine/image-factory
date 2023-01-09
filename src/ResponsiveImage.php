@@ -2,11 +2,16 @@
 
 namespace HelloNico\ImageFactory;
 
+use HelloNico\ImageFactory\Manipulators\Dither;
 use HelloNico\ImageFactory\Scaler\RangeScaler;
 use HelloNico\ImageFactory\Scaler\ScalerInterface;
 use HelloNico\ImageFactory\Scaler\SizesScaler;
+use Intervention\Image\ImageManager;
+use League\Glide\Api\Api;
+use League\Glide\Manipulators;
 use loophp\phposinfo\Enum\FamilyName;
 use loophp\phposinfo\OsInfo;
+use Spatie\Image\Exceptions\CouldNotConvert;
 use Spatie\Image\Exceptions\InvalidManipulation;
 use Spatie\Image\Image;
 use Spatie\Image\Manipulations as SpatieManipulations;
@@ -365,7 +370,7 @@ class ResponsiveImage extends Image
 
         // Cache image exists
         if ($this->filesystem->exists($imageCachePath)) {
-            return $imageCachePath;
+            // return $imageCachePath;
         }
 
         // Increase memory limit
@@ -744,34 +749,51 @@ class ResponsiveImage extends Image
         return $this->filenameFormat;
     }
 
-    /**
-     * @return string
-     */
-    public function save(string $imageCachePath = ''): void
+    public function save(string $outputPath = ''): void
     {
-        $hasCustomFilter = $this->manipulations->getFirstManipulationArgument('filter') === Manipulations::FILTER_DITHERING;
-        $isAvif = $this->manipulations->getFirstManipulationArgument('format') !== Manipulations::FORMAT_AVIF;
-
-        // Are we dealing with AVIF?
-        if (!$isAvif && !$hasCustomFilter) {
-            parent::save($imageCachePath);
-
-            return;
+        if ($outputPath === '') {
+            $outputPath = $this->pathToImage;
         }
 
-        // Is AVIF supported natively?
-        if ($this->isAvifSupported()) {
-            if ($hasCustomFilter) {
-                $this->saveWithCustomFilter($imageCachePath);
-            } else {
-                parent::save($imageCachePath);
-            }
+        $this->addFormatManipulation($outputPath);
+
+        $imageManager = new ImageManager([
+            'driver' => $this->imageDriver,
+        ]);
+        $glideApi = new Api(
+            $imageManager,
+            []
+        );
+
+        $image = $glideApi->getImageManager()->make($this->pathToImage);
+        $imageData = $image->encode()->getEncoded();
+        foreach ($this->manipulations->getManipulationSequence() as $manipulationGroup) {
+            $glideParams = $this->prepareManipulations($manipulationGroup);
+            $glideApi->setManipulators($this->getManipulators());
+            $imageData = $glideApi->run(
+                $imageData,
+                $glideParams
+            );
+        }
+
+        $this->filesystem->dumpFile($outputPath, $imageData);
+
+        $isAvif = $this->manipulations->getFirstManipulationArgument('format') !== Manipulations::FORMAT_AVIF;
+
+        if ($this->shouldOptimize() && !$isAvif) {
+            $optimizerChainConfiguration = $this->manipulations->getFirstManipulationArgument('optimize');
+
+            $optimizerChainConfiguration = \json_decode($optimizerChainConfiguration, true);
+
+            $this->performOptimization($outputPath, $optimizerChainConfiguration);
+        }
+
+        if ($isAvif && $this->isAvifSupported()) {
             return;
         }
 
         // AVIF will be converted with cavif
         $this->manipulations->removeManipulation('format');
-        $this->manipulations->removeManipulation('optimize');
         $sourceExtension = \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
 
         // cavif can't convert gif to avif
@@ -779,20 +801,13 @@ class ResponsiveImage extends Image
             // Convert to PNG first
             $sourceExtension = Manipulations::FORMAT_PNG;
         }
-        $imageCachePath .= '.' . $sourceExtension;
-
-        // Save manipulated image with the original format
-        if ($hasCustomFilter) {
-            $this->saveWithCustomFilter($imageCachePath);
-        } else {
-            parent::save($imageCachePath);
-        }
+        $outputPath .= '.' . $sourceExtension;
 
         // Add avif format again, so srcset keeps the avif format
         $this->to(Manipulations::FORMAT_AVIF);
 
         // Convert to avif with the binary
-        $imageCachePathAvif = \pathinfo($imageCachePath, PATHINFO_DIRNAME) . '/' . \pathinfo($imageCachePath, PATHINFO_FILENAME);
+        $imageCachePathAvif = \pathinfo($outputPath, PATHINFO_DIRNAME) . '/' . \pathinfo($outputPath, PATHINFO_FILENAME);
         // Settings from https://www.industrialempathy.com/posts/avif-webp-quality-settings/
         $args = [
             $this->getAvifBinaryPath(),
@@ -801,7 +816,7 @@ class ResponsiveImage extends Image
             '--quality=56',
             '--speed=5',
             \sprintf('--output=%s', $imageCachePathAvif),
-            $imageCachePath,
+            $outputPath,
         ];
 
         $process = new Process($args);
@@ -813,37 +828,7 @@ class ResponsiveImage extends Image
         }
 
         // Delete source image
-        @\unlink($imageCachePath);
-
-        return;
-    }
-
-    public function saveWithCustomFilter(string $outputPath = ''): void
-    {
-        if ($outputPath === '') {
-            $outputPath = $this->pathToImage;
-        }
-
-        $this->addFormatManipulation($outputPath);
-
-        $glideConversion = GlideConversion::create($this->pathToImage);
-        $glideConversion->useImageDriver($this->imageDriver);
-
-        if ($this->temporaryDirectory !== null) {
-            $glideConversion->setTemporaryDirectory($this->temporaryDirectory);
-        }
-
-        $glideConversion->performManipulations($this->manipulations);
-
-        $glideConversion->save($outputPath);
-
-        if ($this->shouldOptimize()) {
-            $optimizerChainConfiguration = $this->manipulations->getFirstManipulationArgument('optimize');
-
-            $optimizerChainConfiguration = \json_decode($optimizerChainConfiguration, true);
-
-            $this->performOptimization($outputPath, $optimizerChainConfiguration);
-        }
+        @\unlink($outputPath);
     }
 
     /**
@@ -974,6 +959,47 @@ class ResponsiveImage extends Image
         return \pathinfo($this->pathToImage, PATHINFO_EXTENSION);
     }
 
+    protected function addFormatManipulation($outputPath): void
+    {
+        if ($this->manipulations->hasManipulation('format')) {
+            return;
+        }
+
+        // Prevent from adding format manipulation when input file is `jpeg`
+        $inputExtension = \strtolower(\pathinfo($this->pathToImage, PATHINFO_EXTENSION));
+        if ($inputExtension === 'jpeg') {
+            $inputExtension = 'jpg';
+        }
+        $outputExtension = \strtolower(\pathinfo($outputPath, PATHINFO_EXTENSION));
+        if ($inputExtension === $outputExtension) {
+            return;
+        }
+
+        parent::addFormatManipulation($outputPath);
+    }
+
+    protected function getManipulators(): array
+    {
+        return [
+            new Dither(),
+            new Manipulators\Orientation(),
+            new Manipulators\Crop(),
+            new Manipulators\Size(),
+            new Manipulators\Brightness(),
+            new Manipulators\Contrast(),
+            new Manipulators\Gamma(),
+            new Manipulators\Sharpen(),
+            new Manipulators\Filter(),
+            new Manipulators\Flip(),
+            new Manipulators\Blur(),
+            new Manipulators\Pixelate(),
+            // new Manipulators\Watermark($this->getWatermarks(), $this->getWatermarksPathPrefix() ?: ''),
+            new Manipulators\Background(),
+            new Manipulators\Border(),
+            new Manipulators\Encode(),
+        ];
+    }
+
     /**
      * Check for native AVIF support.
      */
@@ -988,6 +1014,54 @@ class ResponsiveImage extends Image
         //     return \class_exists('Imagick') && \Imagick::queryFormats('AVIF');
         // }
         return false;
+    }
+
+    private function prepareManipulations(array $manipulationGroup): array
+    {
+        $glideManipulations = [];
+
+        foreach ($manipulationGroup as $name => $argument) {
+            if ($name !== 'optimize') {
+                $glideManipulations[$this->convertToGlideParameter($name)] = $argument;
+            }
+        }
+
+        return $glideManipulations;
+    }
+
+    private function convertToGlideParameter(string $manipulationName): string
+    {
+        return match ($manipulationName) {
+            'width'             => 'w',
+            'height'            => 'h',
+            'blur'              => 'blur',
+            'pixelate'          => 'pixel',
+            'dither'            => 'dither',
+            'crop'              => 'fit',
+            'manualCrop'        => 'crop',
+            'orientation'       => 'or',
+            'flip'              => 'flip',
+            'fit'               => 'fit',
+            'devicePixelRatio'  => 'dpr',
+            'brightness'        => 'bri',
+            'contrast'          => 'con',
+            'gamma'             => 'gam',
+            'sharpen'           => 'sharp',
+            'filter'            => 'filt',
+            'background'        => 'bg',
+            'border'            => 'border',
+            'quality'           => 'q',
+            'format'            => 'fm',
+            'watermark'         => 'mark',
+            'watermarkWidth'    => 'markw',
+            'watermarkHeight'   => 'markh',
+            'watermarkFit'      => 'markfit',
+            'watermarkPaddingX' => 'markx',
+            'watermarkPaddingY' => 'marky',
+            'watermarkPosition' => 'markpos',
+            'watermarkOpacity'  => 'markalpha',
+            default             => throw CouldNotConvert::unknownManipulation($manipulationName)
+        };
     }
 
     /**

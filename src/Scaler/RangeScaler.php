@@ -6,7 +6,6 @@ class RangeScaler extends AbstractScaler
 {
     public const NAME = 'range';
 
-
     public function scale(): array
     {
         $sizes = [];

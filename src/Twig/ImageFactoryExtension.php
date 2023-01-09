@@ -29,7 +29,7 @@ class ImageFactoryExtension extends AbstractExtension
         'pixelate',
         'quality',
         'sepia',
-        'dithering',
+        'dither',
         'sharpen',
         'to',
         'watermark',
@@ -42,7 +42,6 @@ class ImageFactoryExtension extends AbstractExtension
         'width',
         'widths',
     ];
-
 
     public function getFilters(): array
     {

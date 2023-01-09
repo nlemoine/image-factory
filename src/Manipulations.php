@@ -8,13 +8,11 @@ class Manipulations extends SpatieManipulations
 {
     public const FORMAT_AVIF = 'avif';
 
-    public const FILTER_DITHERING = 'dithering';
-
     /**
      * @throws InvalidManipulation
      */
-    public function dithering(): static
+    public function dither(): static
     {
-        return $this->filter(self::FILTER_DITHERING);
+        return $this->addManipulation('dither', (string) true);
     }
 }
