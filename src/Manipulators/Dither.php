@@ -32,58 +32,30 @@ class Dither extends BaseManipulator
         $image->greyscale();
 
         $size = $image->getSize();
-        $imagePixels = [];
 
-        $pixels = $image->getCore()->exportImagePixels(0, 0, $size->width, $size->height, 'RGB', \Imagick::PIXEL_CHAR);
-        $pixelsLength = \count($pixels);
-        $j = 0;
-        for ($i = 0; $i < $pixelsLength; $i += 3) {
-            $x = $j % $size->width;
-            $y = \floor($j / $size->width);
-            $a = 0;
-            $c = $pixels[$i];
-            $imagePixels[$x][$y] = \intval(($a << 24) + ($c << 16) + ($c << 8) + $c);
-            $j++;
-        }
-        unset($pixels);
+        // We only need Red and Alpha channel
+        $imagePixels = $image->getCore()->exportImagePixels(0, 0, $size->width, $size->height, 'RA', \Imagick::PIXEL_CHAR);
 
-        $draw = new \ImagickDraw();
-        $white = new \ImagickPixel('#FFFFFF');
-        for ($y = 0; $y < $size->height; $y++) {
-            for ($x = 0; $x < $size->width; $x++) {
-                $old = $imagePixels[$x][$y];
-                if ($old > 0xffffff * .5) {
-                    $new = 0xffffff;
-                    $draw->setFillColor($white);
-                    $draw->point($x, $y);
-                } else {
-                    $new = 0;
-                }
+        $imagePixels = $this->ditherImage($imagePixels, $size->width);
 
-                $quant_error = $old - $new;
-                $error_diffusion = (1 / 8) * $quant_error;
-                if (isset($imagePixels[$x + 1][$y])) {
-                    $imagePixels[$x + 1][$y] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x + 2][$y])) {
-                    $imagePixels[$x + 2][$y] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x - 1][$y + 1])) {
-                    $imagePixels[$x - 1][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x][$y + 1])) {
-                    $imagePixels[$x][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x + 1][$y + 1])) {
-                    $imagePixels[$x + 1][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x][$y + 2])) {
-                    $imagePixels[$x][$y + 2] += $error_diffusion;
-                }
+        $imageLength = \count($imagePixels);
+        $newImagePixels = [];
+        for ($currentPixel = 0; $currentPixel <= $imageLength; $currentPixel += 2) {
+            if (!isset($imagePixels[$currentPixel])) {
+                continue;
             }
+            $newImagePixels[] = $imagePixels[$currentPixel];
+            $newImagePixels[] = $imagePixels[$currentPixel];
+            $newImagePixels[] = $imagePixels[$currentPixel];
+            $newImagePixels[] = $imagePixels[$currentPixel + 1];
         }
 
-        $image->getCore()->drawImage($draw);
+        $im = new \Imagick();
+        $im->newImage($size->width, $size->height, 'white');
+
+        $im->importImagePixels(0, 0, $size->width, $size->height, 'RGBA', \Imagick::PIXEL_CHAR, $newImagePixels);
+
+        $image->setCore($im);
 
         return $image;
     }
@@ -93,71 +65,108 @@ class Dither extends BaseManipulator
         $image->greyscale();
 
         $size = $image->getSize();
-        $imagePixels = [];
+        $imageWidth = $size->width;
 
-        for ($x = 0; $x < $size->width; $x++) {
-            for ($y = 0; $y < $size->height; $y++) {
+        // Create a array of pixels in a shape of array(
+        //     Red,
+        //     Alpha,
+        //     R,
+        //     A,
+        //     ...
+        // )
+        $imagePixels = [];
+        for ($y = 0; $y < $size->height; $y++) {
+            for ($x = 0; $x < $size->width; $x++) {
                 $color = \imagecolorat($image->getCore(), $x, $y);
-                // if (!\imageistruecolor($image->getCore())) {
-                //     $color = \imagecolorsforindex($image->getCore(), $color);
-                //     $color['alpha'] = \round(1 - $color['alpha'] / 127, 2);
-                // }
-                $imagePixels[$x][$y] = $color;
+                // Blue
+                $imagePixels[] = $color & 0xFF;
+                // Alpha
+                $imagePixels[] = ($color >> 24) & 0xFF;
             }
         }
 
         $resource = \imagecreatetruecolor($size->width, $size->height);
         \imagealphablending($resource, false);
         \imagesavealpha($resource, true);
-        $white = \imagecolorallocate($resource, 0xff, 0xff, 0xff);
-        /* Atkinson Error Diffusion Kernel:
 
-        1/8 is 1/8 * quantization error.
+        $imageLength = \count($imagePixels);
+        $imagePixels = $this->ditherImage($imagePixels, $imageWidth);
 
-        +-------+-------+-------+-------+
-        |       | Curr. |  1/8  |  1/8  |
-        +-------|-------|-------|-------|
-        |  1/8  |  1/8  |  1/8  |       |
-        +-------|-------|-------|-------|
-        |       |  1/8  |       |       |
-        +-------+-------+-------+-------+
-
-        */
-
-        for ($y = 0; $y < $size->height; $y++) {
-            for ($x = 0; $x < $size->width; $x++) {
-                $old = $imagePixels[$x][$y];
-                if ($old > 0xffffff * .5) {
-                    $new = 0xffffff;
-                    \imagesetpixel($resource, $x, $y, $white);
-                } else {
-                    $new = 0x000000;
-                }
-                $quant_error = $old - $new;
-                $error_diffusion = (1 / 8) * $quant_error;
-                if (isset($imagePixels[$x + 1][$y])) {
-                    $imagePixels[$x + 1][$y] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x + 2][$y])) {
-                    $imagePixels[$x + 2][$y] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x - 1][$y + 1])) {
-                    $imagePixels[$x - 1][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x][$y + 1])) {
-                    $imagePixels[$x][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x + 1][$y + 1])) {
-                    $imagePixels[$x + 1][$y + 1] += $error_diffusion;
-                }
-                if (isset($imagePixels[$x][$y + 2])) {
-                    $imagePixels[$x][$y + 2] += $error_diffusion;
-                }
+        $i = 0;
+        for ($currentPixel = 0; $currentPixel <= $imageLength; $currentPixel += 2) {
+            if (!isset($imagePixels[$currentPixel])) {
+                continue;
             }
+            $color = $imagePixels[$currentPixel];
+            $alpha = $imagePixels[$currentPixel + 1];
+            $pixel = \imagecolorallocatealpha($resource, $color, $color, $color, $alpha);
+            $x = $i % $imageWidth;
+            $y = \floor($i / $imageWidth);
+            \imagesetpixel($resource, $x, $y, $pixel);
+            $i++;
         }
 
         $image->setCore($resource);
 
         return $image;
+    }
+
+    /**
+     * Dither image pixels with Atkinson Error Diffusion Kernel
+     *
+     * @param array $imagePixels
+     * @param integer $imageWidth
+     * @return array
+     */
+    protected function ditherImage(array $imagePixels, int $imageWidth): array
+    {
+        /**
+         * Atkinson Error Diffusion Kernel:
+         * 1/8 is 1/8 * quantization error.
+         * +-------+-------+-------+-------+
+         * |       | Curr. |  1/8  |  1/8  |
+         * +-------|-------|-------|-------|
+         * |  1/8  |  1/8  |  1/8  |       |
+         * +-------|-------|-------|-------|
+         * |       |  1/8  |       |       |
+         * +-------+-------+-------+-------+
+         */
+        $imageLength = \count($imagePixels);
+        for ($currentPixel = 0; $currentPixel <= $imageLength; $currentPixel += 2) {
+            if (!isset($imagePixels[$currentPixel])) {
+                continue;
+            }
+            if ($imagePixels[$currentPixel] <= 128) {
+                $newPixelColor = 0;
+            } else {
+                $newPixelColor = 255;
+            }
+            $errorDiffusion = ($imagePixels[$currentPixel] - $newPixelColor) / 8;
+
+            // Set new pixels color channels
+            $imagePixels[$currentPixel] = $newPixelColor;
+
+            // Error diffusion
+            if (isset($imagePixels[$currentPixel + 2])) {
+                $imagePixels[$currentPixel + 2] += $errorDiffusion;
+            }
+            if (isset($imagePixels[$currentPixel + 4])) {
+                $imagePixels[$currentPixel + 4] += $errorDiffusion;
+            }
+            if (isset($imagePixels[$currentPixel + 2 * $imageWidth - 2])) {
+                $imagePixels[$currentPixel + 2 * $imageWidth - 2] += $errorDiffusion;
+            }
+            if (isset($imagePixels[$currentPixel + 2 * $imageWidth])) {
+                $imagePixels[$currentPixel + 2 * $imageWidth] += $errorDiffusion;
+            }
+            if (isset($imagePixels[$currentPixel + 2 * $imageWidth + 2])) {
+                $imagePixels[$currentPixel + 2 * $imageWidth + 2] += $errorDiffusion;
+            }
+            if (isset($imagePixels[$currentPixel + 4 * $imageWidth])) {
+                $imagePixels[$currentPixel + 4 * $imageWidth] += $errorDiffusion;
+            }
+        }
+
+        return $imagePixels;
     }
 }
