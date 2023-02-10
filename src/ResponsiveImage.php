@@ -807,21 +807,23 @@ class ResponsiveImage extends Image
             return;
         }
 
-        if ($this->isAvifSupported()) {
+        if ($isAvifSupported) {
             return;
         }
+
+        // Settings from https://www.industrialempathy.com/posts/avif-webp-quality-settings/
+        $quality = $this->manipulations->getFirstManipulationArgument('quality') ?? 60;
 
         // Add avif format again, so srcset keeps the avif format
         $this->to(Manipulations::FORMAT_AVIF);
 
         // Convert to avif with the binary
         $imageCachePathAvif = \pathinfo($outputPath, PATHINFO_DIRNAME) . '/' . \pathinfo($outputPath, PATHINFO_FILENAME);
-        // Settings from https://www.industrialempathy.com/posts/avif-webp-quality-settings/
         $args = [
             $this->getAvifBinaryPath(),
             '--quiet',
             '--overwrite',
-            '--quality=56',
+            sprintf('--quality=%s', $quality),
             '--speed=5',
             \sprintf('--output=%s', $imageCachePathAvif),
             $outputPath,
