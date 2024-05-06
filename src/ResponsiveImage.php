@@ -339,7 +339,7 @@ class ResponsiveImage extends Image
             // range scaler
             if (!empty($manipulations['widths']['min']) && !empty($manipulations['widths']['max'])) {
                 $args = \array_values($manipulations['widths']);
-            // sizes scaler
+                // sizes scaler
             } elseif (\is_array($manipulations['widths'])) {
                 $args = [$manipulations['widths']];
             }
@@ -535,8 +535,6 @@ class ResponsiveImage extends Image
 
     /**
      * Get base URL.
-     *
-     * @return string
      */
     public function getBaseUrl(): ?string
     {
@@ -653,8 +651,6 @@ class ResponsiveImage extends Image
 
     /**
      * Set max memory limit.
-     *
-     * @param string $limit
      */
     public function setMaxMemoryLimit(?string $limit): self
     {
@@ -683,8 +679,6 @@ class ResponsiveImage extends Image
 
     /**
      * Get max execution time.
-     *
-     * @return int
      */
     public function getMaxExecutionTime(): ?int
     {
@@ -823,7 +817,7 @@ class ResponsiveImage extends Image
             $this->getAvifBinaryPath(),
             '--quiet',
             '--overwrite',
-            sprintf('--quality=%s', $quality),
+            \sprintf('--quality=%s', $quality),
             '--speed=5',
             \sprintf('--output=%s', $imageCachePathAvif),
             $outputPath,

@@ -336,7 +336,7 @@ class ResponsiveImageTest extends TestCase
         $this->assertFileExists($target);
     }
 
-    public function dataDrivers()
+    public static function dataDrivers()
     {
         return [
             'GD' => ['gd'],

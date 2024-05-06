@@ -114,9 +114,7 @@ class Dither extends BaseManipulator
     /**
      * Dither image pixels with Atkinson Error Diffusion Kernel
      *
-     * @param array $imagePixels
      * @param integer $imageWidth
-     * @return array
      */
     protected function ditherImage(array $imagePixels, int $imageWidth): array
     {

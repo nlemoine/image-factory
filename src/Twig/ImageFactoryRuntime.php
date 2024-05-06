@@ -5,8 +5,8 @@ namespace HelloNico\ImageFactory\Twig;
 use HelloNico\ImageFactory\Factory;
 use HelloNico\ImageFactory\ResponsiveImage;
 use Spatie\Image\Exceptions\InvalidManipulation;
-use function Symfony\Component\String\u;
 use Twig\Extension\RuntimeExtensionInterface;
+use function Symfony\Component\String\u;
 
 class ImageFactoryRuntime implements RuntimeExtensionInterface
 {
